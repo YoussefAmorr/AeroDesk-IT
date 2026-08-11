@@ -12,6 +12,8 @@ import org.springframework.web.server.ResponseStatusException;
 import com.aerodesk.enums.TicketPriority;
 import com.aerodesk.model.TicketHistory;
 import com.aerodesk.repository.TicketHistoryRepository;
+import com.aerodesk.model.TicketComment;
+import com.aerodesk.repository.TicketCommentRepository;
 
 import java.util.Map;
 
@@ -23,15 +25,18 @@ public class TicketService {
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
     private final TicketHistoryRepository ticketHistoryRepository;
+    private final TicketCommentRepository ticketCommentRepository;
 
     public TicketService(
             TicketRepository ticketRepository,
             UserRepository userRepository,
-            TicketHistoryRepository ticketHistoryRepository) {
+            TicketHistoryRepository ticketHistoryRepository,
+            TicketCommentRepository ticketCommentRepository) {
 
         this.ticketRepository = ticketRepository;
         this.userRepository = userRepository;
         this.ticketHistoryRepository = ticketHistoryRepository;
+        this.ticketCommentRepository = ticketCommentRepository;
     }
 
     public List<Ticket> getAllTickets() {
@@ -70,12 +75,12 @@ public class TicketService {
         ticketRepository.delete(ticket);
     }
 
-    public Ticket assignTechnician(Long ticketId, Long userId) {
+    public Ticket assignTechnician(Long ticketId, Long technicianId) {
 
+        // Find the ticket
         Ticket ticket = getTicketById(ticketId);
-        String oldTechnician = ticket.getAssignedTechnician() == null
-                ? "Unassigned"
-                : ticket.getAssignedTechnician().getName();
+
+        // Don't allow assignments to closed tickets
         if (ticket.getStatus() == TicketStatus.CLOSED) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
@@ -83,23 +88,43 @@ public class TicketService {
             );
         }
 
-        User technician = userRepository.findById(userId)
+        // Find the technician
+        User technician = userRepository.findById(technicianId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "User not found"
+                        "Technician not found"
                 ));
 
+        // Make sure the user is actually a technician
         if (technician.getRole() != UserRole.TECHNICIAN) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "User must be a technician"
+                    "User is not a technician"
             );
         }
 
+        // Don't assign the same technician twice
+        if (ticket.getAssignedTechnician() != null &&
+                ticket.getAssignedTechnician().getId().equals(technician.getId())) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Technician is already assigned to this ticket"
+            );
+        }
+
+        // Remember the old technician for the audit log
+        String oldTechnician = ticket.getAssignedTechnician() == null
+                ? "Unassigned"
+                : ticket.getAssignedTechnician().getName();
+
+        // Assign the new technician
         ticket.setAssignedTechnician(technician);
 
+        // Save the ticket
         Ticket savedTicket = ticketRepository.save(ticket);
 
+        // Record the assignment in the audit log
         addHistory(
                 savedTicket,
                 "TECHNICIAN_ASSIGNED",
@@ -197,6 +222,58 @@ public class TicketService {
         getTicketById(ticketId);
 
         return ticketHistoryRepository
+                .findByTicketIdOrderByCreatedAtAsc(ticketId);
+    }
+    public TicketComment addComment(
+            Long ticketId,
+            Long userId,
+            String message) {
+
+        // Find the ticket
+        Ticket ticket = getTicketById(ticketId);
+
+        // Find the user
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "User not found"
+                ));
+
+        // Make sure the comment isn't empty
+        if (message == null || message.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Comment cannot be blank"
+            );
+        }
+
+        // Create the comment
+        TicketComment comment = new TicketComment();
+
+        comment.setTicket(ticket);
+        comment.setUser(user);
+        comment.setMessage(message);
+
+        // Save the comment
+        TicketComment savedComment =
+                ticketCommentRepository.save(comment);
+
+        // Add it to the audit history
+        addHistory(
+                ticket,
+                "COMMENT_ADDED",
+                null,
+                user.getName()
+        );
+
+        return savedComment;
+    }
+
+    public List<TicketComment> getTicketComments(Long ticketId) {
+
+        getTicketById(ticketId);
+
+        return ticketCommentRepository
                 .findByTicketIdOrderByCreatedAtAsc(ticketId);
     }
 

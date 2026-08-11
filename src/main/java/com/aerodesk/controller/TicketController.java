@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import com.aerodesk.enums.TicketStatus;
 import com.aerodesk.enums.TicketPriority;
 import com.aerodesk.model.TicketHistory;
+import com.aerodesk.model.TicketComment;
 import java.util.Map;
 import java.util.List;
 
@@ -92,4 +93,19 @@ public class TicketController {
         return ticketService.getTicketHistory(id);
     }
 
+    @PostMapping("/api/tickets/{ticketId}/comments")
+    public TicketComment addComment(
+            @PathVariable Long ticketId,
+            @RequestParam Long userId,
+            @RequestBody String message) {
+
+        return ticketService.addComment(ticketId, userId, message);
+    }
+
+    @GetMapping("/api/tickets/{ticketId}/comments")
+    public List<TicketComment> getTicketComments(
+            @PathVariable Long ticketId) {
+
+        return ticketService.getTicketComments(ticketId);
+    }
 }
