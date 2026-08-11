@@ -24,10 +24,15 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 
 import org.springframework.security.web.SecurityFilterChain;
 
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import java.util.Base64;
+import java.util.List;
 
 @Configuration
 public class SecurityConfig {
@@ -87,12 +92,39 @@ public class SecurityConfig {
     }
 
     @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        configuration.setAllowedOrigins(
+                List.of("http://localhost:5173")
+        );
+
+        configuration.setAllowedMethods(
+                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")
+        );
+
+        configuration.setAllowedHeaders(
+                List.of("Authorization", "Content-Type")
+        );
+
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+
+        source.registerCorsConfiguration("/**", configuration);
+
+        return source;
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtAuthenticationConverter jwtAuthenticationConverter)
             throws Exception {
 
         http
+                .cors(cors -> {})
+
                 .csrf(csrf -> csrf.disable())
 
                 .sessionManagement(session ->
@@ -106,10 +138,13 @@ public class SecurityConfig {
                         // Public login/auth endpoints
                         .requestMatchers("/api/auth/**").permitAll()
 
-                        // Temporary: keep user creation open while testing
-                        .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN")
+                        // Only admins can create privileged users
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/users"
+                        ).hasRole("ADMIN")
 
-                        // Admin-only actions
+                        // Admin-only ticket actions
                         .requestMatchers(
                                 "/api/tickets/*/assign/*"
                         ).hasRole("ADMIN")
@@ -134,7 +169,11 @@ public class SecurityConfig {
 
                         // Remaining ticket endpoints
                         .requestMatchers("/api/tickets/**")
-                        .hasAnyRole("EMPLOYEE", "TECHNICIAN", "ADMIN")
+                        .hasAnyRole(
+                                "EMPLOYEE",
+                                "TECHNICIAN",
+                                "ADMIN"
+                        )
 
                         // Everything else requires authentication
                         .anyRequest().authenticated()
