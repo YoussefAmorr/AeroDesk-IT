@@ -36,8 +36,11 @@ public class TicketController {
     }
 
     @PostMapping("/api/tickets")
-    public Ticket createTicket(@Valid @RequestBody Ticket ticket) {
-        return ticketService.createTicket(ticket);
+    public Ticket createTicket(
+            @Valid @RequestBody Ticket ticket,
+            @RequestParam Long requesterId) {
+
+        return ticketService.createTicket(ticket, requesterId);
     }
 
     @PutMapping("/api/tickets/{id}")
@@ -76,6 +79,12 @@ public class TicketController {
     @GetMapping("/api/tickets/category/{category}")
     public List<Ticket> getTicketsByCategory(@PathVariable String category) {
         return ticketService.getTicketsByCategory(category);
+    }
+    @GetMapping("/api/tickets/requester/{requesterId}")
+    public List<Ticket> getTicketsByRequester(
+            @PathVariable Long requesterId) {
+
+        return ticketService.getTicketsByRequester(requesterId);
     }
     @GetMapping("/api/tickets/dashboard")
     public Map<String, Long> getDashboardStats() {

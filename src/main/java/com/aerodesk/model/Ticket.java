@@ -50,6 +50,10 @@ public class Ticket {
     @JoinColumn(name = "assigned_technician_id")
     private User assignedTechnician;
 
+    @ManyToOne
+    @JoinColumn(name = "requester_id")
+    private User requester;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
@@ -117,6 +121,14 @@ public class Ticket {
 
     public void setAssignedTechnician(User assignedTechnician) {
         this.assignedTechnician = assignedTechnician;
+    }
+
+    public User getRequester() {
+        return requester;
+    }
+
+    public void setRequester(User requester) {
+        this.requester = requester;
     }
 
 

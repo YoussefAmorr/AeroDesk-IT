@@ -51,7 +51,21 @@ public class TicketService {
                 ));
     }
 
-    public Ticket createTicket(Ticket ticket) {
+    public Ticket createTicket(Ticket ticket, Long requesterId) {
+
+        // Find the user submitting the ticket
+        User requester = userRepository.findById(requesterId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Requester not found"
+                ));
+
+        // Set the requester
+        ticket.setRequester(requester);
+
+        // New tickets always start as OPEN
+        ticket.setStatus(TicketStatus.OPEN);
+
         return ticketRepository.save(ticket);
     }
 
@@ -146,6 +160,16 @@ public class TicketService {
     }
     public List<Ticket> getTicketsByCategory(String category) {
         return ticketRepository.findByCategoryIgnoreCase(category);
+    }
+    public List<Ticket> getTicketsByRequester(Long requesterId) {
+
+        userRepository.findById(requesterId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Requester not found"
+                ));
+
+        return ticketRepository.findByRequesterId(requesterId);
     }
     public Map<String, Long> getDashboardStats() {
 
