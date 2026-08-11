@@ -1,0 +1,8 @@
+spring.application.name=AeroDeskIT
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/aerodesk
+spring.datasource.username=postgres
+spring.datasource.password=YOUR_PASSWORD_HERE
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
