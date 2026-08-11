@@ -8,6 +8,10 @@ import com.aerodesk.enums.TicketStatus;
 import com.aerodesk.enums.TicketPriority;
 import com.aerodesk.model.TicketHistory;
 import com.aerodesk.model.TicketComment;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import java.util.Map;
 import java.util.List;
 
@@ -26,19 +30,50 @@ public class TicketController {
     }
 
     @GetMapping("/api/tickets")
-    public List<Ticket> getAllTickets() {
+    public List<Ticket> getAllTickets(
+            @AuthenticationPrincipal Jwt jwt) {
+
+        String role = jwt.getClaimAsString("role");
+        Long userId = jwt.getClaim("userId");
+
+        if ("EMPLOYEE".equals(role)) {
+            return ticketService.getTicketsByRequester(userId);
+        }
+
         return ticketService.getAllTickets();
     }
 
     @GetMapping("/api/tickets/{id}")
-    public Ticket getTicketById(@PathVariable Long id) {
-        return ticketService.getTicketById(id);
+    public Ticket getTicketById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        Ticket ticket = ticketService.getTicketById(id);
+
+        String role = jwt.getClaimAsString("role");
+        Long userId = jwt.getClaim("userId");
+
+        if ("EMPLOYEE".equals(role)) {
+
+            if (ticket.getRequester() == null ||
+                    !ticket.getRequester().getId().equals(userId)) {
+
+                throw new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "You do not have permission to view this ticket"
+                );
+            }
+        }
+
+        return ticket;
     }
 
     @PostMapping("/api/tickets")
     public Ticket createTicket(
             @Valid @RequestBody Ticket ticket,
-            @RequestParam Long requesterId) {
+            @AuthenticationPrincipal Jwt jwt) {
+
+        Long requesterId = jwt.getClaim("userId");
 
         return ticketService.createTicket(ticket, requesterId);
     }
@@ -105,16 +140,44 @@ public class TicketController {
     @PostMapping("/api/tickets/{ticketId}/comments")
     public TicketComment addComment(
             @PathVariable Long ticketId,
-            @RequestParam Long userId,
+            @AuthenticationPrincipal Jwt jwt,
             @RequestBody String message) {
+
+        Long userId = jwt.getClaim("userId");
 
         return ticketService.addComment(ticketId, userId, message);
     }
 
     @GetMapping("/api/tickets/{ticketId}/comments")
     public List<TicketComment> getTicketComments(
-            @PathVariable Long ticketId) {
+            @PathVariable Long ticketId,
+            @AuthenticationPrincipal Jwt jwt) {
+
+        Ticket ticket = ticketService.getTicketById(ticketId);
+
+        String role = jwt.getClaimAsString("role");
+        Long userId = jwt.getClaim("userId");
+
+        if ("EMPLOYEE".equals(role)) {
+
+            if (ticket.getRequester() == null ||
+                    !ticket.getRequester().getId().equals(userId)) {
+
+                throw new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "You do not have permission to view comments on this ticket"
+                );
+            }
+        }
 
         return ticketService.getTicketComments(ticketId);
+    }
+    @GetMapping("/api/tickets/my")
+    public List<Ticket> getMyTickets(
+            @AuthenticationPrincipal Jwt jwt) {
+
+        Long userId = jwt.getClaim("userId");
+
+        return ticketService.getTicketsByRequester(userId);
     }
 }

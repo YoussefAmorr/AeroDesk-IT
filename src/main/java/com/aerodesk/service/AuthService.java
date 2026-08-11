@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import com.aerodesk.dto.RegisterRequest;
+import com.aerodesk.enums.UserRole;
 
 @Service
 public class AuthService {
@@ -54,5 +56,34 @@ public class AuthService {
                 user.getRole(),
                 token
         );
+    }
+
+    public User register(RegisterRequest request) {
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "A user with this email already exists"
+            );
+        }
+
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Password is required"
+            );
+        }
+
+        User user = new User();
+
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        user.setPassword(
+                passwordEncoder.encode(request.getPassword())
+        );
+
+        user.setRole(UserRole.EMPLOYEE);
+
+        return userRepository.save(user);
     }
 }

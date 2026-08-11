@@ -107,7 +107,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
 
                         // Temporary: keep user creation open while testing
-                        .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN")
 
                         // Admin-only actions
                         .requestMatchers(
