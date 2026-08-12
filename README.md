@@ -2,7 +2,7 @@
 
 AeroDesk IT is a full-stack IT service management and help-desk application built with React, Spring Boot, PostgreSQL, Spring Security, and JWT authentication. It provides separate role-based experiences for employees, technicians, and administrators while supporting the full lifecycle of an internal IT support ticket.
 
-![AeroDesk Employee Dashboard](docs/screenshots/employee-dashboard.png)
+![AeroDesk Employee Dashboard](Documents/screenshots/employee-dashboard.png)
 
 ## Overview
 
@@ -41,35 +41,35 @@ The project separates frontend presentation, API communication, backend business
 
 ### Authentication
 
-![AeroDesk Login](docs/screenshots/login.png)
+![AeroDesk Login](Documents/screenshots/login.png)
 
 ### Employee Portal
 
 Employees receive a personal support dashboard with ticket statistics, ticket creation, search, and filtering.
 
-![Employee Dashboard](docs/screenshots/employee-dashboard.png)
+![Employee Dashboard](Documents/screenshots/employee-dashboard.png)
 
 ### Technician Portal
 
 Technicians can work from the full service queue or focus on tickets assigned directly to them.
 
-![Technician Dashboard](docs/screenshots/technician-dashboard.png)
+![Technician Dashboard](Documents/screenshots/technician-dashboard.png)
 
 ### Administrator Portal
 
 Administrators have system-wide ticket management, including technician-based filtering and assignment workflows.
 
-![Admin Ticket Management](docs/screenshots/admin-tickets.png)
+![Admin Ticket Management](Documents/screenshots/admin-tickets.png)
 
 Administrators can also review AeroDesk accounts and their assigned roles.
 
-![Admin User Management](docs/screenshots/admin-users.png)
+![Admin User Management](Documents/screenshots/admin-users.png)
 
 ### Ticket Workflow
 
 The ticket detail view brings together requester information, ticket metadata, technician assignment, workflow controls, deletion controls, and comments.
 
-![Ticket Details](docs/screenshots/ticket-details.png)
+![Ticket Details](Documents/screenshots/ticket-details.png)
 
 ## Tech Stack
 
