@@ -1,5 +1,11 @@
 import { useState } from 'react'
 import './App.css'
+import DashboardHeader from './components/DashboardHeader'
+import LoginPage from './pages/LoginPage'
+import CreateTicketModal from './components/CreateTicketModal'
+import CreateUserModal from './components/CreateUserModal'
+import TicketDetailsModal from './components/TicketDetailsModal'
+import TicketTable from './components/TicketTable'
 
 function App() {
   const [email, setEmail] = useState('')
@@ -497,37 +503,10 @@ function App() {
     return (
         <div className="dashboard">
 
-          <header className="dashboard-header">
-
-            <div className="dashboard-brand">
-              <div className="small-brand-badge">
-                AD
-              </div>
-
-              <div>
-                <h2>AeroDesk IT</h2>
-                <span>Service Management</span>
-              </div>
-            </div>
-
-            <div className="user-area">
-
-              <div className="user-info">
-                <strong>{user.name}</strong>
-                <span>{user.role}</span>
-              </div>
-
-              <button
-                  type="button"
-                  className="logout-button"
-                  onClick={handleLogout}
-              >
-                Sign Out
-              </button>
-
-            </div>
-
-          </header>
+          <DashboardHeader
+              user={user}
+              onLogout={handleLogout}
+          />
 
           <main className="dashboard-content">
 
@@ -585,622 +564,53 @@ function App() {
             </div>
 
             {showCreateTicket && isEmployee && (
-                <div className="modal-overlay">
-
-                  <div className="ticket-modal">
-
-                    <div className="modal-header">
-
-                      <div>
-                        <h2>
-                          Create Support Ticket
-                        </h2>
-
-                        <p>
-                          Tell the IT team what you need help with.
-                        </p>
-                      </div>
-
-                      <button
-                          type="button"
-                          className="close-button"
-                          onClick={() =>
-                              setShowCreateTicket(false)
-                          }
-                      >
-                        ×
-                      </button>
-
-                    </div>
-
-                    <form onSubmit={handleCreateTicket}>
-
-                      <div className="form-group">
-
-                        <label>
-                          Title
-                        </label>
-
-                        <input
-                            type="text"
-                            placeholder="Briefly describe the issue"
-                            value={newTicket.title}
-                            onChange={(event) =>
-                                setNewTicket({
-                                  ...newTicket,
-                                  title: event.target.value,
-                                })
-                            }
-                            required
-                        />
-
-                      </div>
-
-                      <div className="form-group">
-
-                        <label>
-                          Description
-                        </label>
-
-                        <textarea
-                            placeholder="Describe the problem in more detail..."
-                            value={newTicket.description}
-                            onChange={(event) =>
-                                setNewTicket({
-                                  ...newTicket,
-                                  description: event.target.value,
-                                })
-                            }
-                            required
-                        />
-
-                      </div>
-
-                      <div className="form-row">
-
-                        <div className="form-group">
-
-                          <label>
-                            Category
-                          </label>
-
-                          <select
-                              value={newTicket.category}
-                              onChange={(event) =>
-                                  setNewTicket({
-                                    ...newTicket,
-                                    category: event.target.value,
-                                  })
-                              }
-                          >
-                            <option value="Hardware">
-                              Hardware
-                            </option>
-
-                            <option value="Software">
-                              Software
-                            </option>
-
-                            <option value="Network">
-                              Network
-                            </option>
-
-                            <option value="Account">
-                              Account
-                            </option>
-
-                            <option value="Other">
-                              Other
-                            </option>
-                          </select>
-
-                        </div>
-
-                        <div className="form-group">
-
-                          <label>
-                            Priority
-                          </label>
-
-                          <select
-                              value={newTicket.priority}
-                              onChange={(event) =>
-                                  setNewTicket({
-                                    ...newTicket,
-                                    priority: event.target.value,
-                                  })
-                              }
-                          >
-                            <option value="LOW">
-                              Low
-                            </option>
-
-                            <option value="MEDIUM">
-                              Medium
-                            </option>
-
-                            <option value="HIGH">
-                              High
-                            </option>
-                          </select>
-
-                        </div>
-
-                      </div>
-
-                      {ticketMessage && (
-                          <p className="ticket-error">
-                            {ticketMessage}
-                          </p>
-                      )}
-
-                      <div className="modal-actions">
-
-                        <button
-                            type="button"
-                            className="cancel-button"
-                            onClick={() =>
-                                setShowCreateTicket(false)
-                            }
-                        >
-                          Cancel
-                        </button>
-
-                        <button
-                            type="submit"
-                            className="submit-ticket-button"
-                        >
-                          Submit Ticket
-                        </button>
-
-                      </div>
-
-                    </form>
-
-                  </div>
-
-                </div>
+                <CreateTicketModal
+                    newTicket={newTicket}
+                    setNewTicket={setNewTicket}
+                    ticketMessage={ticketMessage}
+                    onClose={() => setShowCreateTicket(false)}
+                    onSubmit={handleCreateTicket}
+                />
             )}
 
             {showCreateUser && isAdmin && (
-                <div className="modal-overlay">
-
-                  <div className="ticket-modal">
-
-                    <div className="modal-header">
-
-                      <div>
-                        <h2>Create AeroDesk User</h2>
-                        <p>
-                          Add an employee, technician, or administrator account.
-                        </p>
-                      </div>
-
-                      <button
-                          type="button"
-                          className="close-button"
-                          onClick={() => {
-                            setShowCreateUser(false)
-                            setUserMessage('')
-                          }}
-                      >
-                        ×
-                      </button>
-
-                    </div>
-
-                    <form onSubmit={handleCreateUser}>
-
-                      <div className="form-group">
-                        <label>Name</label>
-                        <input
-                            type="text"
-                            placeholder="Full name"
-                            value={newUser.name}
-                            onChange={(event) =>
-                                setNewUser({
-                                  ...newUser,
-                                  name: event.target.value,
-                                })
-                            }
-                            required
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label>Email</label>
-                        <input
-                            type="email"
-                            placeholder="name@aerodesk.com"
-                            value={newUser.email}
-                            onChange={(event) =>
-                                setNewUser({
-                                  ...newUser,
-                                  email: event.target.value,
-                                })
-                            }
-                            required
-                        />
-                      </div>
-
-                      <div className="form-row">
-
-                        <div className="form-group">
-                          <label>Role</label>
-                          <select
-                              value={newUser.role}
-                              onChange={(event) =>
-                                  setNewUser({
-                                    ...newUser,
-                                    role: event.target.value,
-                                  })
-                              }
-                          >
-                            <option value="EMPLOYEE">Employee</option>
-                            <option value="TECHNICIAN">Technician</option>
-                            <option value="ADMIN">Admin</option>
-                          </select>
-                        </div>
-
-                        <div className="form-group">
-                          <label>Temporary Password</label>
-                          <input
-                              type="password"
-                              placeholder="Enter password"
-                              value={newUser.password}
-                              onChange={(event) =>
-                                  setNewUser({
-                                    ...newUser,
-                                    password: event.target.value,
-                                  })
-                              }
-                              required
-                          />
-                        </div>
-
-                      </div>
-
-                      {userMessage && (
-                          <p className="ticket-error">
-                            {userMessage}
-                          </p>
-                      )}
-
-                      <div className="modal-actions">
-
-                        <button
-                            type="button"
-                            className="cancel-button"
-                            onClick={() => {
-                              setShowCreateUser(false)
-                              setUserMessage('')
-                            }}
-                        >
-                          Cancel
-                        </button>
-
-                        <button
-                            type="submit"
-                            className="submit-ticket-button"
-                        >
-                          Create User
-                        </button>
-
-                      </div>
-
-                    </form>
-
-                  </div>
-
-                </div>
+                <CreateUserModal
+                    newUser={newUser}
+                    setNewUser={setNewUser}
+                    userMessage={userMessage}
+                    onClose={() => {
+                      setShowCreateUser(false)
+                      setUserMessage('')
+                    }}
+                    onSubmit={handleCreateUser}
+                />
             )}
+
+
 
             {selectedTicket && (
-                <div className="modal-overlay">
-
-                  <div className="ticket-modal">
-
-                    <div className="modal-header">
-
-                      <div>
-
-                        <p className="ticket-number">
-                          Ticket #{selectedTicket.id}
-                        </p>
-
-                        <h2>
-                          {selectedTicket.title}
-                        </h2>
-
-                      </div>
-
-                      <button
-                          type="button"
-                          className="close-button"
-                          onClick={closeTicketDetails}
-                      >
-                        ×
-                      </button>
-
-                    </div>
-
-                    <div className="ticket-details-grid">
-
-                      <div>
-                        <span>Status</span>
-
-                        <strong>
-                          {selectedTicket.status?.replace(
-                              '_',
-                              ' '
-                          )}
-                        </strong>
-                      </div>
-
-                      <div>
-                        <span>Priority</span>
-
-                        <strong>
-                          {selectedTicket.priority}
-                        </strong>
-                      </div>
-
-                      <div>
-                        <span>Category</span>
-
-                        <strong>
-                          {selectedTicket.category}
-                        </strong>
-                      </div>
-
-                    </div>
-
-                    {(isTechnician || isAdmin) && (
-                        <div className="ticket-detail-section">
-
-                          <h3>
-                            Requester
-                          </h3>
-
-                          <p>
-                            {selectedTicket.requester
-                                ? `${selectedTicket.requester.name} — ${selectedTicket.requester.email}`
-                                : 'No requester information'}
-                          </p>
-
-                        </div>
-                    )}
-
-                    <div className="ticket-detail-section">
-
-                      <h3>
-                        Description
-                      </h3>
-
-                      <p>
-                        {selectedTicket.description}
-                      </p>
-
-                    </div>
-
-                    <div className="ticket-detail-section">
-
-                      <h3>
-                        Assigned Technician
-                      </h3>
-
-                      <p>
-                        {selectedTicket.assignedTechnician
-                            ? selectedTicket.assignedTechnician.name
-                            : 'Not assigned yet'}
-                      </p>
-
-                    </div>
-
-                    {isAdmin && (
-                        <div className="ticket-detail-section">
-
-                          <h3>Admin Controls</h3>
-
-                          <div className="admin-ticket-controls">
-
-                            <div className="admin-assignment-control">
-                              <label htmlFor="technician-assignment">
-                                Assigned Technician
-                              </label>
-
-                              <select
-                                  id="technician-assignment"
-                                  value={
-                                      selectedTicket.assignedTechnician?.id || ''
-                                  }
-                                  disabled={adminActionLoading}
-                                  onChange={(event) =>
-                                      handleAssignTechnician(
-                                          event.target.value
-                                      )
-                                  }
-                              >
-                                <option value="" disabled>
-                                  Select technician
-                                </option>
-
-                                {technicianUsers.map((technician) => (
-                                    <option
-                                        key={technician.id}
-                                        value={technician.id}
-                                    >
-                                      {technician.name}
-                                    </option>
-                                ))}
-                              </select>
-                            </div>
-
-                            <button
-                                type="button"
-                                className="delete-ticket-button"
-                                disabled={adminActionLoading}
-                                onClick={handleDeleteTicket}
-                            >
-                              Delete Ticket
-                            </button>
-
-                          </div>
-
-                          {technicianUsers.length === 0 && (
-                              <p className="status-error">
-                                No technician accounts are available.
-                              </p>
-                          )}
-
-                          {adminActionError && (
-                              <p className="status-error">
-                                {adminActionError}
-                              </p>
-                          )}
-
-                        </div>
-                    )}
-
-                    {(isTechnician || isAdmin) && (
-                        <div className="ticket-detail-section">
-
-                          <h3>
-                            Ticket Workflow
-                          </h3>
-
-                          <div className="status-actions">
-
-                            {selectedTicket.status === 'OPEN' && (
-                                <button
-                                    type="button"
-                                    className="status-button start-button"
-                                    disabled={updatingStatus}
-                                    onClick={() =>
-                                        handleUpdateStatus(
-                                            'IN_PROGRESS'
-                                        )
-                                    }
-                                >
-                                  {updatingStatus
-                                      ? 'Updating...'
-                                      : 'Start Working'}
-                                </button>
-                            )}
-
-                            {selectedTicket.status ===
-                                'IN_PROGRESS' && (
-                                    <button
-                                        type="button"
-                                        className="status-button resolve-button"
-                                        disabled={updatingStatus}
-                                        onClick={() =>
-                                            handleUpdateStatus(
-                                                'RESOLVED'
-                                            )
-                                        }
-                                    >
-                                      {updatingStatus
-                                          ? 'Updating...'
-                                          : 'Mark Resolved'}
-                                    </button>
-                                )}
-
-                            {selectedTicket.status ===
-                                'RESOLVED' && (
-                                    <p className="resolved-message">
-                                      This ticket has been resolved.
-                                    </p>
-                                )}
-
-                          </div>
-
-                          {statusError && (
-                              <p className="status-error">
-                                {statusError}
-                              </p>
-                          )}
-
-                        </div>
-                    )}
-
-                    <div className="ticket-detail-section">
-
-                      <h3>
-                        Comments
-                      </h3>
-
-                      {comments.length === 0 ? (
-                          <p className="no-comments">
-                            No comments yet.
-                          </p>
-                      ) : (
-                          <div className="comments-list">
-
-                            {comments.map((comment) => (
-                                <div
-                                    className="comment"
-                                    key={comment.id}
-                                >
-
-                                  <strong>
-                                    {comment.user?.name ||
-                                        comment.author?.name ||
-                                        comment.createdBy?.name ||
-                                        'AeroDesk User'}
-                                  </strong>
-
-                                  <p>
-                                    {comment.message}
-                                  </p>
-
-                                </div>
-                            ))}
-
-                          </div>
-                      )}
-
-                      <form
-                          className="comment-form"
-                          onSubmit={handleAddComment}
-                      >
-
-                    <textarea
-                        placeholder="Write a comment..."
-                        value={newComment}
-                        onChange={(event) =>
-                            setNewComment(
-                                event.target.value
-                            )
-                        }
-                        required
-                    />
-
-                        {commentError && (
-                            <p className="comment-error">
-                              {commentError}
-                            </p>
-                        )}
-
-                        <div className="comment-actions">
-
-                          <button
-                              type="submit"
-                              className="add-comment-button"
-                          >
-                            Add Comment
-                          </button>
-
-                        </div>
-
-                      </form>
-
-                    </div>
-
-                  </div>
-
-                </div>
+                <TicketDetailsModal
+                    selectedTicket={selectedTicket}
+                    onClose={closeTicketDetails}
+                    isTechnician={isTechnician}
+                    isAdmin={isAdmin}
+                    technicianUsers={technicianUsers}
+                    adminActionLoading={adminActionLoading}
+                    adminActionError={adminActionError}
+                    onAssignTechnician={handleAssignTechnician}
+                    onDeleteTicket={handleDeleteTicket}
+                    updatingStatus={updatingStatus}
+                    statusError={statusError}
+                    onUpdateStatus={handleUpdateStatus}
+                    comments={comments}
+                    newComment={newComment}
+                    setNewComment={setNewComment}
+                    commentError={commentError}
+                    onAddComment={handleAddComment}
+                />
             )}
+
+
 
             {isEmployee && (
                 <>
@@ -1264,85 +674,10 @@ function App() {
 
                     </div>
 
-                    {tickets.length === 0 ? (
-                        <div className="empty-state">
-
-                          <h3>
-                            No tickets yet
-                          </h3>
-
-                          <p>
-                            Create your first support request
-                            to get started.
-                          </p>
-
-                        </div>
-                    ) : (
-                        <div className="ticket-table-wrapper">
-
-                          <table className="ticket-table">
-
-                            <thead>
-                            <tr>
-                              <th>ID</th>
-                              <th>Title</th>
-                              <th>Category</th>
-                              <th>Priority</th>
-                              <th>Status</th>
-                            </tr>
-                            </thead>
-
-                            <tbody>
-
-                            {tickets.map((ticket) => (
-                                <tr
-                                    key={ticket.id}
-                                    className="ticket-row"
-                                    onClick={() =>
-                                        openTicket(ticket)
-                                    }
-                                >
-
-                                  <td>
-                                    #{ticket.id}
-                                  </td>
-
-                                  <td className="ticket-title">
-                                    {ticket.title}
-                                  </td>
-
-                                  <td>
-                                    {ticket.category}
-                                  </td>
-
-                                  <td>
-                              <span
-                                  className={`badge priority-${ticket.priority?.toLowerCase()}`}
-                              >
-                                {ticket.priority}
-                              </span>
-                                  </td>
-
-                                  <td>
-                              <span
-                                  className={`badge status-${ticket.status?.toLowerCase()}`}
-                              >
-                                {ticket.status?.replace(
-                                    '_',
-                                    ' '
-                                )}
-                              </span>
-                                  </td>
-
-                                </tr>
-                            ))}
-
-                            </tbody>
-
-                          </table>
-
-                        </div>
-                    )}
+                    <TicketTable
+                        tickets={tickets}
+                        onOpenTicket={openTicket}
+                    />
 
                   </section>
                 </>
@@ -1450,101 +785,12 @@ function App() {
 
                     </div>
 
-                    {displayedTechnicianTickets.length ===
-                    0 ? (
-                        <div className="empty-state">
-
-                          <h3>
-                            No tickets found
-                          </h3>
-
-                          <p>
-                            There are no tickets in this view.
-                          </p>
-
-                        </div>
-                    ) : (
-                        <div className="ticket-table-wrapper">
-
-                          <table className="ticket-table">
-
-                            <thead>
-                            <tr>
-                              <th>ID</th>
-                              <th>Title</th>
-                              <th>Requester</th>
-                              <th>Category</th>
-                              <th>Priority</th>
-                              <th>Status</th>
-                              <th>Technician</th>
-                            </tr>
-                            </thead>
-
-                            <tbody>
-
-                            {displayedTechnicianTickets.map(
-                                (ticket) => (
-                                    <tr
-                                        key={ticket.id}
-                                        className="ticket-row"
-                                        onClick={() =>
-                                            openTicket(ticket)
-                                        }
-                                    >
-
-                                      <td>
-                                        #{ticket.id}
-                                      </td>
-
-                                      <td className="ticket-title">
-                                        {ticket.title}
-                                      </td>
-
-                                      <td>
-                                        {ticket.requester?.name ||
-                                            'Unknown'}
-                                      </td>
-
-                                      <td>
-                                        {ticket.category}
-                                      </td>
-
-                                      <td>
-                                  <span
-                                      className={`badge priority-${ticket.priority?.toLowerCase()}`}
-                                  >
-                                    {ticket.priority}
-                                  </span>
-                                      </td>
-
-                                      <td>
-                                  <span
-                                      className={`badge status-${ticket.status?.toLowerCase()}`}
-                                  >
-                                    {ticket.status?.replace(
-                                        '_',
-                                        ' '
-                                    )}
-                                  </span>
-                                      </td>
-
-                                      <td>
-                                        {ticket
-                                                .assignedTechnician
-                                                ?.name ||
-                                            'Unassigned'}
-                                      </td>
-
-                                    </tr>
-                                )
-                            )}
-
-                            </tbody>
-
-                          </table>
-
-                        </div>
-                    )}
+                    <TicketTable
+                        tickets={displayedTechnicianTickets}
+                        onOpenTicket={openTicket}
+                        showRequester={true}
+                        showTechnician={true}
+                    />
 
                   </section>
                 </>
@@ -1623,77 +869,12 @@ function App() {
                             </div>
                           </div>
 
-                          {tickets.length === 0 ? (
-                              <div className="empty-state">
-                                <h3>No tickets found</h3>
-                                <p>There are currently no AeroDesk tickets.</p>
-                              </div>
-                          ) : (
-                              <div className="ticket-table-wrapper">
-
-                                <table className="ticket-table">
-
-                                  <thead>
-                                  <tr>
-                                    <th>ID</th>
-                                    <th>Title</th>
-                                    <th>Requester</th>
-                                    <th>Category</th>
-                                    <th>Priority</th>
-                                    <th>Status</th>
-                                    <th>Technician</th>
-                                  </tr>
-                                  </thead>
-
-                                  <tbody>
-
-                                  {tickets.map((ticket) => (
-                                      <tr
-                                          key={ticket.id}
-                                          className="ticket-row"
-                                          onClick={() => openTicket(ticket)}
-                                      >
-                                        <td>#{ticket.id}</td>
-
-                                        <td className="ticket-title">
-                                          {ticket.title}
-                                        </td>
-
-                                        <td>
-                                          {ticket.requester?.name || 'Unknown'}
-                                        </td>
-
-                                        <td>{ticket.category}</td>
-
-                                        <td>
-                                          <span
-                                              className={`badge priority-${ticket.priority?.toLowerCase()}`}
-                                          >
-                                            {ticket.priority}
-                                          </span>
-                                        </td>
-
-                                        <td>
-                                          <span
-                                              className={`badge status-${ticket.status?.toLowerCase()}`}
-                                          >
-                                            {ticket.status?.replace('_', ' ')}
-                                          </span>
-                                        </td>
-
-                                        <td>
-                                          {ticket.assignedTechnician?.name ||
-                                              'Unassigned'}
-                                        </td>
-                                      </tr>
-                                  ))}
-
-                                  </tbody>
-
-                                </table>
-
-                              </div>
-                          )}
+                          <TicketTable
+                              tickets={tickets}
+                              onOpenTicket={openTicket}
+                              showRequester={true}
+                              showTechnician={true}
+                          />
 
                         </section>
 
@@ -1816,100 +997,15 @@ function App() {
   }
 
   return (
-      <div className="login-page">
-
-        <div className="login-brand">
-
-          <div className="brand-badge">
-            AD
-          </div>
-
-          <h1>
-            AeroDesk IT
-          </h1>
-
-          <p>
-            Secure IT service management for employees,
-            technicians, and administrators.
-          </p>
-
-        </div>
-
-        <div className="login-card">
-
-          <div className="login-header">
-
-            <h2>
-              Welcome back
-            </h2>
-
-            <p>
-              Sign in to continue to AeroDesk.
-            </p>
-
-          </div>
-
-          <form onSubmit={handleLogin}>
-
-            <div className="form-group">
-
-              <label htmlFor="email">
-                Email
-              </label>
-
-              <input
-                  id="email"
-                  type="email"
-                  placeholder="name@aerodesk.com"
-                  value={email}
-                  onChange={(event) =>
-                      setEmail(event.target.value)
-                  }
-                  required
-              />
-
-            </div>
-
-            <div className="form-group">
-
-              <label htmlFor="password">
-                Password
-              </label>
-
-              <input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(event) =>
-                      setPassword(event.target.value)
-                  }
-                  required
-              />
-
-            </div>
-
-            <button
-                className="login-button"
-                type="submit"
-                disabled={loading}
-            >
-              {loading
-                  ? 'Signing in...'
-                  : 'Sign In'}
-            </button>
-
-            {message && (
-                <p className="login-message">
-                  {message}
-                </p>
-            )}
-
-          </form>
-
-        </div>
-
-      </div>
+      <LoginPage
+          email={email}
+          setEmail={setEmail}
+          password={password}
+          setPassword={setPassword}
+          message={message}
+          loading={loading}
+          onLogin={handleLogin}
+      />
   )
 }
 
