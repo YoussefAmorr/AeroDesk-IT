@@ -9,4 +9,6 @@ public interface TicketHistoryRepository
         extends JpaRepository<TicketHistory, Long> {
 
     List<TicketHistory> findByTicketIdOrderByCreatedAtAsc(Long ticketId);
+
+    void deleteByTicketId(Long ticketId);
 }

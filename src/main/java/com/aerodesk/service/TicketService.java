@@ -14,6 +14,7 @@ import com.aerodesk.model.TicketHistory;
 import com.aerodesk.repository.TicketHistoryRepository;
 import com.aerodesk.model.TicketComment;
 import com.aerodesk.repository.TicketCommentRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
@@ -82,10 +83,16 @@ public class TicketService {
         return ticketRepository.save(ticket);
     }
 
+    @Transactional
     public void deleteTicket(Long id) {
 
         Ticket ticket = getTicketById(id);
 
+        // Delete dependent records first
+        ticketCommentRepository.deleteByTicketId(id);
+        ticketHistoryRepository.deleteByTicketId(id);
+
+        // Now the ticket can safely be deleted
         ticketRepository.delete(ticket);
     }
 

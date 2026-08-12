@@ -1,4 +1,4 @@
-* {
+{
   box-sizing: border-box;
 }
 
@@ -841,115 +841,256 @@ select {
     padding: 22px;
   }
 }
-  /* TECHNICIAN DASHBOARD */
+/* TECHNICIAN DASHBOARD */
 
+.technician-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.queue-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.queue-filter {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+
+  background: white;
+  color: #4b5563;
+
+  padding: 8px 13px;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.queue-filter:hover {
+  background: #f8fafc;
+}
+
+.queue-filter.active {
+  border-color: #2563eb;
+
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+/* TECHNICIAN STATUS CONTROLS */
+
+.status-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-button {
+  border: none;
+  border-radius: 8px;
+
+  padding: 10px 16px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.status-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.start-button {
+  background: #2563eb;
+  color: white;
+}
+
+.start-button:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.resolve-button {
+  background: #16a34a;
+  color: white;
+}
+
+.resolve-button:hover:not(:disabled) {
+  background: #15803d;
+}
+
+.resolved-message {
+  color: #166534 !important;
+
+  font-weight: 600;
+}
+
+.status-error {
+  margin-top: 10px !important;
+
+  color: #b91c1c !important;
+
+  font-size: 13px !important;
+  font-weight: 600;
+}
+
+@media (max-width: 800px) {
   .technician-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .queue-filters {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    width: 100%;
   }
 
   .queue-filter {
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
+    flex: 1;
+  }
+}
 
-    background: white;
-    color: #4b5563;
+/* ADMIN DASHBOARD */
 
-    padding: 8px 13px;
+.admin-navigation {
+  display: flex;
+  gap: 10px;
 
-    font-size: 12px;
-    font-weight: 700;
+  margin-bottom: 28px;
 
-    cursor: pointer;
+  padding: 6px;
+
+  width: fit-content;
+
+  background: #e9eef6;
+  border-radius: 10px;
+}
+
+.admin-nav-button {
+  border: none;
+  border-radius: 8px;
+
+  padding: 10px 16px;
+
+  background: transparent;
+  color: #4b5563;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.admin-nav-button:hover {
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.admin-nav-button.active {
+  background: white;
+  color: #1d4ed8;
+
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.admin-ticket-controls {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.admin-assignment-control {
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-assignment-control label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4b5563;
+}
+
+.admin-assignment-control select {
+  width: 100%;
+
+  border: 1px solid #d1d5db;
+  border-radius: 9px;
+
+  padding: 11px 13px;
+
+  background: white;
+  color: #1f2937;
+
+  outline: none;
+}
+
+.admin-assignment-control select:focus {
+  border-color: #2563eb;
+
+  box-shadow:
+          0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.delete-ticket-button {
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+
+  padding: 11px 16px;
+
+  background: #fff1f2;
+  color: #b91c1c;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.delete-ticket-button:hover:not(:disabled) {
+  background: #fee2e2;
+}
+
+.delete-ticket-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.role-employee {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.role-technician {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.role-admin {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+@media (max-width: 800px) {
+  .admin-navigation {
+    width: 100%;
   }
 
-  .queue-filter:hover {
-    background: #f8fafc;
+  .admin-nav-button {
+    flex: 1;
   }
 
-  .queue-filter.active {
-    border-color: #2563eb;
-
-    background: #eff6ff;
-    color: #1d4ed8;
+  .admin-ticket-controls {
+    align-items: stretch;
+    flex-direction: column;
   }
 
-  /* TECHNICIAN STATUS CONTROLS */
-
-  .status-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+  .delete-ticket-button {
+    width: 100%;
   }
-
-  .status-button {
-    border: none;
-    border-radius: 8px;
-
-    padding: 10px 16px;
-
-    font-weight: 700;
-
-    cursor: pointer;
-  }
-
-  .status-button:disabled {
-    opacity: 0.65;
-    cursor: not-allowed;
-  }
-
-  .start-button {
-    background: #2563eb;
-    color: white;
-  }
-
-  .start-button:hover:not(:disabled) {
-    background: #1d4ed8;
-  }
-
-  .resolve-button {
-    background: #16a34a;
-    color: white;
-  }
-
-  .resolve-button:hover:not(:disabled) {
-    background: #15803d;
-  }
-
-  .resolved-message {
-    color: #166534 !important;
-
-    font-weight: 600;
-  }
-
-  .status-error {
-    margin-top: 10px !important;
-
-    color: #b91c1c !important;
-
-    font-size: 13px !important;
-    font-weight: 600;
-  }
-
-  @media (max-width: 800px) {
-    .technician-heading {
-      align-items: flex-start;
-      flex-direction: column;
-    }
-
-    .queue-filters {
-      width: 100%;
-    }
-
-    .queue-filter {
-      flex: 1;
-    }
-  }
+}

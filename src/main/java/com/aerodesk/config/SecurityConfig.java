@@ -139,10 +139,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
 
                         // Only admins can create privileged users
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/users"
-                        ).hasRole("ADMIN")
+                        // Admin-only user management
+                        .requestMatchers("/api/users/**")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers("/api/users")
+                        .hasRole("ADMIN")
 
                         // Admin-only ticket actions
                         .requestMatchers(

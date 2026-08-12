@@ -31,6 +31,20 @@ function App() {
 
   const [technicianView, setTechnicianView] = useState('ALL')
 
+  // Admin portal state
+  const [users, setUsers] = useState([])
+  const [adminView, setAdminView] = useState('TICKETS')
+  const [showCreateUser, setShowCreateUser] = useState(false)
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    role: 'EMPLOYEE',
+    password: '',
+  })
+  const [userMessage, setUserMessage] = useState('')
+  const [adminActionError, setAdminActionError] = useState('')
+  const [adminActionLoading, setAdminActionLoading] = useState(false)
+
   const loadTickets = async (token) => {
     const response = await fetch(
         'http://localhost:8080/api/tickets',
@@ -49,11 +63,30 @@ function App() {
     setTickets(data)
   }
 
+  const loadUsers = async (token) => {
+    const response = await fetch(
+        'http://localhost:8080/api/users',
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+    )
+
+    if (!response.ok) {
+      throw new Error('Unable to load users')
+    }
+
+    const data = await response.json()
+    setUsers(data)
+  }
+
   const openTicket = async (ticket) => {
     const token = localStorage.getItem('token')
 
     setCommentError('')
     setStatusError('')
+    setAdminActionError('')
     setNewComment('')
 
     try {
@@ -215,6 +248,142 @@ function App() {
     }
   }
 
+  const handleCreateUser = async (event) => {
+    event.preventDefault()
+
+    const token = localStorage.getItem('token')
+    setUserMessage('')
+
+    try {
+      const response = await fetch(
+          'http://localhost:8080/api/users',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(newUser),
+          }
+      )
+
+      if (!response.ok) {
+        let errorMessage = 'Unable to create user.'
+
+        if (response.status === 409) {
+          errorMessage = 'A user with this email already exists.'
+        } else if (response.status === 400) {
+          errorMessage = 'Please check the user information and try again.'
+        }
+
+        setUserMessage(errorMessage)
+        return
+      }
+
+      setNewUser({
+        name: '',
+        email: '',
+        role: 'EMPLOYEE',
+        password: '',
+      })
+
+      setUserMessage('')
+      setShowCreateUser(false)
+      await loadUsers(token)
+    } catch (error) {
+      setUserMessage('Unable to connect to AeroDesk.')
+    }
+  }
+
+  const handleAssignTechnician = async (technicianId) => {
+    if (!selectedTicket || !technicianId) {
+      return
+    }
+
+    const token = localStorage.getItem('token')
+    setAdminActionError('')
+    setAdminActionLoading(true)
+
+    try {
+      const response = await fetch(
+          `http://localhost:8080/api/tickets/${selectedTicket.id}/assign/${technicianId}`,
+          {
+            method: 'PUT',
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+      )
+
+      if (!response.ok) {
+        setAdminActionError('Unable to assign technician.')
+        return
+      }
+
+      const updatedTicket = await response.json()
+      setSelectedTicket(updatedTicket)
+
+      setTickets((currentTickets) =>
+          currentTickets.map((ticket) =>
+              ticket.id === updatedTicket.id
+                  ? updatedTicket
+                  : ticket
+          )
+      )
+    } catch (error) {
+      setAdminActionError('Unable to connect to AeroDesk.')
+    } finally {
+      setAdminActionLoading(false)
+    }
+  }
+
+  const handleDeleteTicket = async () => {
+    if (!selectedTicket) {
+      return
+    }
+
+    const confirmed = window.confirm(
+        `Delete ticket #${selectedTicket.id} "${selectedTicket.title}"? This cannot be undone.`
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    const token = localStorage.getItem('token')
+    setAdminActionError('')
+    setAdminActionLoading(true)
+
+    try {
+      const response = await fetch(
+          `http://localhost:8080/api/tickets/${selectedTicket.id}`,
+          {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+      )
+
+      if (!response.ok) {
+        setAdminActionError('Unable to delete ticket.')
+        return
+      }
+
+      setTickets((currentTickets) =>
+          currentTickets.filter(
+              (ticket) => ticket.id !== selectedTicket.id
+          )
+      )
+
+      closeTicketDetails()
+    } catch (error) {
+      setAdminActionError('Unable to connect to AeroDesk.')
+    } finally {
+      setAdminActionLoading(false)
+    }
+  }
+
   const handleLogin = async (event) => {
     event.preventDefault()
 
@@ -249,6 +418,10 @@ function App() {
       setUser(data)
 
       await loadTickets(data.token)
+
+      if (data.role === 'ADMIN') {
+        await loadUsers(data.token)
+      }
     } catch (error) {
       setMessage('Unable to connect to AeroDesk.')
     } finally {
@@ -268,6 +441,18 @@ function App() {
     setCommentError('')
     setStatusError('')
     setTechnicianView('ALL')
+    setUsers([])
+    setAdminView('TICKETS')
+    setShowCreateUser(false)
+    setNewUser({
+      name: '',
+      email: '',
+      role: 'EMPLOYEE',
+      password: '',
+    })
+    setUserMessage('')
+    setAdminActionError('')
+    setAdminActionLoading(false)
     setEmail('')
     setPassword('')
     setMessage('')
@@ -279,6 +464,7 @@ function App() {
     setNewComment('')
     setCommentError('')
     setStatusError('')
+    setAdminActionError('')
   }
 
   const countByStatus = (status) => {
@@ -302,6 +488,10 @@ function App() {
   const isEmployee = user?.role === 'EMPLOYEE'
   const isTechnician = user?.role === 'TECHNICIAN'
   const isAdmin = user?.role === 'ADMIN'
+
+  const technicianUsers = users.filter(
+      (account) => account.role === 'TECHNICIAN'
+  )
 
   if (user) {
     return (
@@ -360,7 +550,9 @@ function App() {
                 <p>
                   {isEmployee
                       ? 'View and manage your IT support requests.'
-                      : 'Review and manage IT support tickets across AeroDesk.'}
+                      : isTechnician
+                          ? 'Review and manage IT support tickets across AeroDesk.'
+                          : 'Manage AeroDesk tickets, assignments, and user accounts.'}
                 </p>
 
               </div>
@@ -374,6 +566,19 @@ function App() {
                       }
                   >
                     + Create Ticket
+                  </button>
+              )}
+
+              {isAdmin && adminView === 'USERS' && (
+                  <button
+                      type="button"
+                      className="create-ticket-button"
+                      onClick={() => {
+                        setUserMessage('')
+                        setShowCreateUser(true)
+                      }}
+                  >
+                    + Create User
                   </button>
               )}
 
@@ -557,6 +762,139 @@ function App() {
                 </div>
             )}
 
+            {showCreateUser && isAdmin && (
+                <div className="modal-overlay">
+
+                  <div className="ticket-modal">
+
+                    <div className="modal-header">
+
+                      <div>
+                        <h2>Create AeroDesk User</h2>
+                        <p>
+                          Add an employee, technician, or administrator account.
+                        </p>
+                      </div>
+
+                      <button
+                          type="button"
+                          className="close-button"
+                          onClick={() => {
+                            setShowCreateUser(false)
+                            setUserMessage('')
+                          }}
+                      >
+                        ×
+                      </button>
+
+                    </div>
+
+                    <form onSubmit={handleCreateUser}>
+
+                      <div className="form-group">
+                        <label>Name</label>
+                        <input
+                            type="text"
+                            placeholder="Full name"
+                            value={newUser.name}
+                            onChange={(event) =>
+                                setNewUser({
+                                  ...newUser,
+                                  name: event.target.value,
+                                })
+                            }
+                            required
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label>Email</label>
+                        <input
+                            type="email"
+                            placeholder="name@aerodesk.com"
+                            value={newUser.email}
+                            onChange={(event) =>
+                                setNewUser({
+                                  ...newUser,
+                                  email: event.target.value,
+                                })
+                            }
+                            required
+                        />
+                      </div>
+
+                      <div className="form-row">
+
+                        <div className="form-group">
+                          <label>Role</label>
+                          <select
+                              value={newUser.role}
+                              onChange={(event) =>
+                                  setNewUser({
+                                    ...newUser,
+                                    role: event.target.value,
+                                  })
+                              }
+                          >
+                            <option value="EMPLOYEE">Employee</option>
+                            <option value="TECHNICIAN">Technician</option>
+                            <option value="ADMIN">Admin</option>
+                          </select>
+                        </div>
+
+                        <div className="form-group">
+                          <label>Temporary Password</label>
+                          <input
+                              type="password"
+                              placeholder="Enter password"
+                              value={newUser.password}
+                              onChange={(event) =>
+                                  setNewUser({
+                                    ...newUser,
+                                    password: event.target.value,
+                                  })
+                              }
+                              required
+                          />
+                        </div>
+
+                      </div>
+
+                      {userMessage && (
+                          <p className="ticket-error">
+                            {userMessage}
+                          </p>
+                      )}
+
+                      <div className="modal-actions">
+
+                        <button
+                            type="button"
+                            className="cancel-button"
+                            onClick={() => {
+                              setShowCreateUser(false)
+                              setUserMessage('')
+                            }}
+                        >
+                          Cancel
+                        </button>
+
+                        <button
+                            type="submit"
+                            className="submit-ticket-button"
+                        >
+                          Create User
+                        </button>
+
+                      </div>
+
+                    </form>
+
+                  </div>
+
+                </div>
+            )}
+
             {selectedTicket && (
                 <div className="modal-overlay">
 
@@ -658,6 +996,71 @@ function App() {
                       </p>
 
                     </div>
+
+                    {isAdmin && (
+                        <div className="ticket-detail-section">
+
+                          <h3>Admin Controls</h3>
+
+                          <div className="admin-ticket-controls">
+
+                            <div className="admin-assignment-control">
+                              <label htmlFor="technician-assignment">
+                                Assigned Technician
+                              </label>
+
+                              <select
+                                  id="technician-assignment"
+                                  value={
+                                      selectedTicket.assignedTechnician?.id || ''
+                                  }
+                                  disabled={adminActionLoading}
+                                  onChange={(event) =>
+                                      handleAssignTechnician(
+                                          event.target.value
+                                      )
+                                  }
+                              >
+                                <option value="" disabled>
+                                  Select technician
+                                </option>
+
+                                {technicianUsers.map((technician) => (
+                                    <option
+                                        key={technician.id}
+                                        value={technician.id}
+                                    >
+                                      {technician.name}
+                                    </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <button
+                                type="button"
+                                className="delete-ticket-button"
+                                disabled={adminActionLoading}
+                                onClick={handleDeleteTicket}
+                            >
+                              Delete Ticket
+                            </button>
+
+                          </div>
+
+                          {technicianUsers.length === 0 && (
+                              <p className="status-error">
+                                No technician accounts are available.
+                              </p>
+                          )}
+
+                          {adminActionError && (
+                              <p className="status-error">
+                                {adminActionError}
+                              </p>
+                          )}
+
+                        </div>
+                    )}
 
                     {(isTechnician || isAdmin) && (
                         <div className="ticket-detail-section">
@@ -945,7 +1348,7 @@ function App() {
                 </>
             )}
 
-            {(isTechnician || isAdmin) && (
+            {isTechnician && (
                 <>
                   <section className="stats-grid">
 
@@ -1144,6 +1547,265 @@ function App() {
                     )}
 
                   </section>
+                </>
+            )}
+
+            {isAdmin && (
+                <>
+
+                  <div className="admin-navigation">
+
+                    <button
+                        type="button"
+                        className={
+                          adminView === 'TICKETS'
+                              ? 'admin-nav-button active'
+                              : 'admin-nav-button'
+                        }
+                        onClick={() => setAdminView('TICKETS')}
+                    >
+                      Ticket Management
+                    </button>
+
+                    <button
+                        type="button"
+                        className={
+                          adminView === 'USERS'
+                              ? 'admin-nav-button active'
+                              : 'admin-nav-button'
+                        }
+                        onClick={() => setAdminView('USERS')}
+                    >
+                      User Management
+                    </button>
+
+                  </div>
+
+                  {adminView === 'TICKETS' && (
+                      <>
+
+                        <section className="stats-grid">
+
+                          <div className="stat-card">
+                            <span>Open Tickets</span>
+                            <strong>{countByStatus('OPEN')}</strong>
+                            <p>Waiting for support</p>
+                          </div>
+
+                          <div className="stat-card">
+                            <span>In Progress</span>
+                            <strong>{countByStatus('IN_PROGRESS')}</strong>
+                            <p>Currently being worked</p>
+                          </div>
+
+                          <div className="stat-card">
+                            <span>Resolved</span>
+                            <strong>{countByStatus('RESOLVED')}</strong>
+                            <p>Completed requests</p>
+                          </div>
+
+                          <div className="stat-card">
+                            <span>Total Tickets</span>
+                            <strong>{tickets.length}</strong>
+                            <p>All AeroDesk requests</p>
+                          </div>
+
+                        </section>
+
+                        <section className="tickets-section">
+
+                          <div className="section-heading">
+                            <div>
+                              <h2>Ticket Management</h2>
+                              <p>
+                                View, assign, update, and manage all support tickets.
+                              </p>
+                            </div>
+                          </div>
+
+                          {tickets.length === 0 ? (
+                              <div className="empty-state">
+                                <h3>No tickets found</h3>
+                                <p>There are currently no AeroDesk tickets.</p>
+                              </div>
+                          ) : (
+                              <div className="ticket-table-wrapper">
+
+                                <table className="ticket-table">
+
+                                  <thead>
+                                  <tr>
+                                    <th>ID</th>
+                                    <th>Title</th>
+                                    <th>Requester</th>
+                                    <th>Category</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
+                                    <th>Technician</th>
+                                  </tr>
+                                  </thead>
+
+                                  <tbody>
+
+                                  {tickets.map((ticket) => (
+                                      <tr
+                                          key={ticket.id}
+                                          className="ticket-row"
+                                          onClick={() => openTicket(ticket)}
+                                      >
+                                        <td>#{ticket.id}</td>
+
+                                        <td className="ticket-title">
+                                          {ticket.title}
+                                        </td>
+
+                                        <td>
+                                          {ticket.requester?.name || 'Unknown'}
+                                        </td>
+
+                                        <td>{ticket.category}</td>
+
+                                        <td>
+                                          <span
+                                              className={`badge priority-${ticket.priority?.toLowerCase()}`}
+                                          >
+                                            {ticket.priority}
+                                          </span>
+                                        </td>
+
+                                        <td>
+                                          <span
+                                              className={`badge status-${ticket.status?.toLowerCase()}`}
+                                          >
+                                            {ticket.status?.replace('_', ' ')}
+                                          </span>
+                                        </td>
+
+                                        <td>
+                                          {ticket.assignedTechnician?.name ||
+                                              'Unassigned'}
+                                        </td>
+                                      </tr>
+                                  ))}
+
+                                  </tbody>
+
+                                </table>
+
+                              </div>
+                          )}
+
+                        </section>
+
+                      </>
+                  )}
+
+                  {adminView === 'USERS' && (
+                      <>
+
+                        <section className="stats-grid">
+
+                          <div className="stat-card">
+                            <span>Total Users</span>
+                            <strong>{users.length}</strong>
+                            <p>All AeroDesk accounts</p>
+                          </div>
+
+                          <div className="stat-card">
+                            <span>Employees</span>
+                            <strong>
+                              {
+                                users.filter(
+                                    (account) =>
+                                        account.role === 'EMPLOYEE'
+                                ).length
+                              }
+                            </strong>
+                            <p>Employee accounts</p>
+                          </div>
+
+                          <div className="stat-card">
+                            <span>Technicians</span>
+                            <strong>{technicianUsers.length}</strong>
+                            <p>IT support accounts</p>
+                          </div>
+
+                          <div className="stat-card">
+                            <span>Administrators</span>
+                            <strong>
+                              {
+                                users.filter(
+                                    (account) =>
+                                        account.role === 'ADMIN'
+                                ).length
+                              }
+                            </strong>
+                            <p>Administrative accounts</p>
+                          </div>
+
+                        </section>
+
+                        <section className="tickets-section">
+
+                          <div className="section-heading">
+                            <div>
+                              <h2>User Management</h2>
+                              <p>
+                                Review AeroDesk accounts and their assigned roles.
+                              </p>
+                            </div>
+                          </div>
+
+                          {users.length === 0 ? (
+                              <div className="empty-state">
+                                <h3>No users found</h3>
+                                <p>No AeroDesk accounts are available.</p>
+                              </div>
+                          ) : (
+                              <div className="ticket-table-wrapper">
+
+                                <table className="ticket-table">
+
+                                  <thead>
+                                  <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                  </tr>
+                                  </thead>
+
+                                  <tbody>
+
+                                  {users.map((account) => (
+                                      <tr key={account.id}>
+                                        <td>#{account.id}</td>
+                                        <td className="ticket-title">
+                                          {account.name}
+                                        </td>
+                                        <td>{account.email}</td>
+                                        <td>
+                                          <span
+                                              className={`badge role-${account.role?.toLowerCase()}`}
+                                          >
+                                            {account.role}
+                                          </span>
+                                        </td>
+                                      </tr>
+                                  ))}
+
+                                  </tbody>
+
+                                </table>
+
+                              </div>
+                          )}
+
+                        </section>
+
+                      </>
+                  )}
+
                 </>
             )}
 
