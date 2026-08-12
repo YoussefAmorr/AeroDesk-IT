@@ -841,3 +841,115 @@ select {
     padding: 22px;
   }
 }
+  /* TECHNICIAN DASHBOARD */
+
+  .technician-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .queue-filters {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .queue-filter {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+
+    background: white;
+    color: #4b5563;
+
+    padding: 8px 13px;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    cursor: pointer;
+  }
+
+  .queue-filter:hover {
+    background: #f8fafc;
+  }
+
+  .queue-filter.active {
+    border-color: #2563eb;
+
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+
+  /* TECHNICIAN STATUS CONTROLS */
+
+  .status-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .status-button {
+    border: none;
+    border-radius: 8px;
+
+    padding: 10px 16px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+  }
+
+  .status-button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+
+  .start-button {
+    background: #2563eb;
+    color: white;
+  }
+
+  .start-button:hover:not(:disabled) {
+    background: #1d4ed8;
+  }
+
+  .resolve-button {
+    background: #16a34a;
+    color: white;
+  }
+
+  .resolve-button:hover:not(:disabled) {
+    background: #15803d;
+  }
+
+  .resolved-message {
+    color: #166534 !important;
+
+    font-weight: 600;
+  }
+
+  .status-error {
+    margin-top: 10px !important;
+
+    color: #b91c1c !important;
+
+    font-size: 13px !important;
+    font-weight: 600;
+  }
+
+  @media (max-width: 800px) {
+    .technician-heading {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .queue-filters {
+      width: 100%;
+    }
+
+    .queue-filter {
+      flex: 1;
+    }
+  }

@@ -26,6 +26,11 @@ function App() {
   const [newComment, setNewComment] = useState('')
   const [commentError, setCommentError] = useState('')
 
+  const [statusError, setStatusError] = useState('')
+  const [updatingStatus, setUpdatingStatus] = useState(false)
+
+  const [technicianView, setTechnicianView] = useState('ALL')
+
   const loadTickets = async (token) => {
     const response = await fetch(
         'http://localhost:8080/api/tickets',
@@ -48,6 +53,8 @@ function App() {
     const token = localStorage.getItem('token')
 
     setCommentError('')
+    setStatusError('')
+    setNewComment('')
 
     try {
       const ticketResponse = await fetch(
@@ -168,6 +175,46 @@ function App() {
     }
   }
 
+  const handleUpdateStatus = async (newStatus) => {
+    const token = localStorage.getItem('token')
+
+    setStatusError('')
+    setUpdatingStatus(true)
+
+    try {
+      const response = await fetch(
+          `http://localhost:8080/api/tickets/${selectedTicket.id}/status/${newStatus}`,
+          {
+            method: 'PUT',
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+      )
+
+      if (!response.ok) {
+        setStatusError('Unable to update ticket status.')
+        return
+      }
+
+      const updatedTicket = await response.json()
+
+      setSelectedTicket(updatedTicket)
+
+      setTickets((currentTickets) =>
+          currentTickets.map((ticket) =>
+              ticket.id === updatedTicket.id
+                  ? updatedTicket
+                  : ticket
+          )
+      )
+    } catch (error) {
+      setStatusError('Unable to connect to AeroDesk.')
+    } finally {
+      setUpdatingStatus(false)
+    }
+  }
+
   const handleLogin = async (event) => {
     event.preventDefault()
 
@@ -219,6 +266,8 @@ function App() {
     setComments([])
     setNewComment('')
     setCommentError('')
+    setStatusError('')
+    setTechnicianView('ALL')
     setEmail('')
     setPassword('')
     setMessage('')
@@ -229,6 +278,7 @@ function App() {
     setComments([])
     setNewComment('')
     setCommentError('')
+    setStatusError('')
   }
 
   const countByStatus = (status) => {
@@ -236,6 +286,22 @@ function App() {
         (ticket) => ticket.status === status
     ).length
   }
+
+  const assignedToMeTickets = user
+      ? tickets.filter(
+          (ticket) =>
+              ticket.assignedTechnician?.id === user.id
+      )
+      : []
+
+  const displayedTechnicianTickets =
+      technicianView === 'MINE'
+          ? assignedToMeTickets
+          : tickets
+
+  const isEmployee = user?.role === 'EMPLOYEE'
+  const isTechnician = user?.role === 'TECHNICIAN'
+  const isAdmin = user?.role === 'ADMIN'
 
   if (user) {
     return (
@@ -278,8 +344,13 @@ function App() {
             <div className="welcome-section">
 
               <div>
+
                 <p className="eyebrow">
-                  EMPLOYEE PORTAL
+                  {isEmployee
+                      ? 'EMPLOYEE PORTAL'
+                      : isTechnician
+                          ? 'TECHNICIAN PORTAL'
+                          : 'ADMIN PORTAL'}
                 </p>
 
                 <h1>
@@ -287,23 +358,28 @@ function App() {
                 </h1>
 
                 <p>
-                  View and manage your IT support requests.
+                  {isEmployee
+                      ? 'View and manage your IT support requests.'
+                      : 'Review and manage IT support tickets across AeroDesk.'}
                 </p>
+
               </div>
 
-              <button
-                  type="button"
-                  className="create-ticket-button"
-                  onClick={() =>
-                      setShowCreateTicket(true)
-                  }
-              >
-                + Create Ticket
-              </button>
+              {isEmployee && (
+                  <button
+                      type="button"
+                      className="create-ticket-button"
+                      onClick={() =>
+                          setShowCreateTicket(true)
+                      }
+                  >
+                    + Create Ticket
+                  </button>
+              )}
 
             </div>
 
-            {showCreateTicket && (
+            {showCreateTicket && isEmployee && (
                 <div className="modal-overlay">
 
                   <div className="ticket-modal">
@@ -367,8 +443,7 @@ function App() {
                             onChange={(event) =>
                                 setNewTicket({
                                   ...newTicket,
-                                  description:
-                                  event.target.value,
+                                  description: event.target.value,
                                 })
                             }
                             required
@@ -389,8 +464,7 @@ function App() {
                               onChange={(event) =>
                                   setNewTicket({
                                     ...newTicket,
-                                    category:
-                                    event.target.value,
+                                    category: event.target.value,
                                   })
                               }
                           >
@@ -428,8 +502,7 @@ function App() {
                               onChange={(event) =>
                                   setNewTicket({
                                     ...newTicket,
-                                    priority:
-                                    event.target.value,
+                                    priority: event.target.value,
                                   })
                               }
                           >
@@ -516,9 +589,7 @@ function App() {
                     <div className="ticket-details-grid">
 
                       <div>
-                    <span>
-                      Status
-                    </span>
+                        <span>Status</span>
 
                         <strong>
                           {selectedTicket.status?.replace(
@@ -529,9 +600,7 @@ function App() {
                       </div>
 
                       <div>
-                    <span>
-                      Priority
-                    </span>
+                        <span>Priority</span>
 
                         <strong>
                           {selectedTicket.priority}
@@ -539,9 +608,7 @@ function App() {
                       </div>
 
                       <div>
-                    <span>
-                      Category
-                    </span>
+                        <span>Category</span>
 
                         <strong>
                           {selectedTicket.category}
@@ -549,6 +616,22 @@ function App() {
                       </div>
 
                     </div>
+
+                    {(isTechnician || isAdmin) && (
+                        <div className="ticket-detail-section">
+
+                          <h3>
+                            Requester
+                          </h3>
+
+                          <p>
+                            {selectedTicket.requester
+                                ? `${selectedTicket.requester.name} — ${selectedTicket.requester.email}`
+                                : 'No requester information'}
+                          </p>
+
+                        </div>
+                    )}
 
                     <div className="ticket-detail-section">
 
@@ -570,12 +653,73 @@ function App() {
 
                       <p>
                         {selectedTicket.assignedTechnician
-                            ? selectedTicket
-                                .assignedTechnician.name
+                            ? selectedTicket.assignedTechnician.name
                             : 'Not assigned yet'}
                       </p>
 
                     </div>
+
+                    {(isTechnician || isAdmin) && (
+                        <div className="ticket-detail-section">
+
+                          <h3>
+                            Ticket Workflow
+                          </h3>
+
+                          <div className="status-actions">
+
+                            {selectedTicket.status === 'OPEN' && (
+                                <button
+                                    type="button"
+                                    className="status-button start-button"
+                                    disabled={updatingStatus}
+                                    onClick={() =>
+                                        handleUpdateStatus(
+                                            'IN_PROGRESS'
+                                        )
+                                    }
+                                >
+                                  {updatingStatus
+                                      ? 'Updating...'
+                                      : 'Start Working'}
+                                </button>
+                            )}
+
+                            {selectedTicket.status ===
+                                'IN_PROGRESS' && (
+                                    <button
+                                        type="button"
+                                        className="status-button resolve-button"
+                                        disabled={updatingStatus}
+                                        onClick={() =>
+                                            handleUpdateStatus(
+                                                'RESOLVED'
+                                            )
+                                        }
+                                    >
+                                      {updatingStatus
+                                          ? 'Updating...'
+                                          : 'Mark Resolved'}
+                                    </button>
+                                )}
+
+                            {selectedTicket.status ===
+                                'RESOLVED' && (
+                                    <p className="resolved-message">
+                                      This ticket has been resolved.
+                                    </p>
+                                )}
+
+                          </div>
+
+                          {statusError && (
+                              <p className="status-error">
+                                {statusError}
+                              </p>
+                          )}
+
+                        </div>
+                    )}
 
                     <div className="ticket-detail-section">
 
@@ -600,7 +744,7 @@ function App() {
                                     {comment.user?.name ||
                                         comment.author?.name ||
                                         comment.createdBy?.name ||
-                                        user.name}
+                                        'AeroDesk User'}
                                   </strong>
 
                                   <p>
@@ -655,163 +799,353 @@ function App() {
                 </div>
             )}
 
-            <section className="stats-grid">
+            {isEmployee && (
+                <>
+                  <section className="stats-grid">
 
-              <div className="stat-card">
-              <span>
-                Open
-              </span>
+                    <div className="stat-card">
+                      <span>Open</span>
+                      <strong>
+                        {countByStatus('OPEN')}
+                      </strong>
+                      <p>
+                        Tickets awaiting support
+                      </p>
+                    </div>
 
-                <strong>
-                  {countByStatus('OPEN')}
-                </strong>
+                    <div className="stat-card">
+                      <span>In Progress</span>
+                      <strong>
+                        {countByStatus('IN_PROGRESS')}
+                      </strong>
+                      <p>
+                        Currently being worked
+                      </p>
+                    </div>
 
-                <p>
-                  Tickets awaiting support
-                </p>
-              </div>
+                    <div className="stat-card">
+                      <span>Resolved</span>
+                      <strong>
+                        {countByStatus('RESOLVED')}
+                      </strong>
+                      <p>
+                        Completed requests
+                      </p>
+                    </div>
 
-              <div className="stat-card">
-              <span>
-                In Progress
-              </span>
+                    <div className="stat-card">
+                      <span>Total Tickets</span>
+                      <strong>
+                        {tickets.length}
+                      </strong>
+                      <p>
+                        Your submitted requests
+                      </p>
+                    </div>
 
-                <strong>
-                  {countByStatus('IN_PROGRESS')}
-                </strong>
+                  </section>
 
-                <p>
-                  Currently being worked
-                </p>
-              </div>
+                  <section className="tickets-section">
 
-              <div className="stat-card">
-              <span>
-                Resolved
-              </span>
+                    <div className="section-heading">
 
-                <strong>
-                  {countByStatus('RESOLVED')}
-                </strong>
+                      <div>
+                        <h2>
+                          My Tickets
+                        </h2>
 
-                <p>
-                  Completed requests
-                </p>
-              </div>
+                        <p>
+                          Your recent IT support requests
+                        </p>
+                      </div>
 
-              <div className="stat-card">
-              <span>
-                Total Tickets
-              </span>
+                    </div>
 
-                <strong>
-                  {tickets.length}
-                </strong>
+                    {tickets.length === 0 ? (
+                        <div className="empty-state">
 
-                <p>
-                  Your submitted requests
-                </p>
-              </div>
+                          <h3>
+                            No tickets yet
+                          </h3>
 
-            </section>
+                          <p>
+                            Create your first support request
+                            to get started.
+                          </p>
 
-            <section className="tickets-section">
+                        </div>
+                    ) : (
+                        <div className="ticket-table-wrapper">
 
-              <div className="section-heading">
+                          <table className="ticket-table">
 
-                <div>
-                  <h2>
-                    My Tickets
-                  </h2>
+                            <thead>
+                            <tr>
+                              <th>ID</th>
+                              <th>Title</th>
+                              <th>Category</th>
+                              <th>Priority</th>
+                              <th>Status</th>
+                            </tr>
+                            </thead>
 
-                  <p>
-                    Your recent IT support requests
-                  </p>
-                </div>
+                            <tbody>
 
-              </div>
+                            {tickets.map((ticket) => (
+                                <tr
+                                    key={ticket.id}
+                                    className="ticket-row"
+                                    onClick={() =>
+                                        openTicket(ticket)
+                                    }
+                                >
 
-              {tickets.length === 0 ? (
-                  <div className="empty-state">
+                                  <td>
+                                    #{ticket.id}
+                                  </td>
 
-                    <h3>
-                      No tickets yet
-                    </h3>
+                                  <td className="ticket-title">
+                                    {ticket.title}
+                                  </td>
 
-                    <p>
-                      Create your first support request to get
-                      started.
-                    </p>
+                                  <td>
+                                    {ticket.category}
+                                  </td>
 
-                  </div>
-              ) : (
-                  <div className="ticket-table-wrapper">
+                                  <td>
+                              <span
+                                  className={`badge priority-${ticket.priority?.toLowerCase()}`}
+                              >
+                                {ticket.priority}
+                              </span>
+                                  </td>
 
-                    <table className="ticket-table">
+                                  <td>
+                              <span
+                                  className={`badge status-${ticket.status?.toLowerCase()}`}
+                              >
+                                {ticket.status?.replace(
+                                    '_',
+                                    ' '
+                                )}
+                              </span>
+                                  </td>
 
-                      <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>Title</th>
-                        <th>Category</th>
-                        <th>Priority</th>
-                        <th>Status</th>
-                      </tr>
-                      </thead>
+                                </tr>
+                            ))}
 
-                      <tbody>
+                            </tbody>
 
-                      {tickets.map((ticket) => (
-                          <tr
-                              key={ticket.id}
-                              className="ticket-row"
-                              onClick={() =>
-                                  openTicket(ticket)
-                              }
-                          >
+                          </table>
 
-                            <td>
-                              #{ticket.id}
-                            </td>
+                        </div>
+                    )}
 
-                            <td className="ticket-title">
-                              {ticket.title}
-                            </td>
+                  </section>
+                </>
+            )}
 
-                            <td>
-                              {ticket.category}
-                            </td>
+            {(isTechnician || isAdmin) && (
+                <>
+                  <section className="stats-grid">
 
-                            <td>
-                          <span
-                              className={`badge priority-${ticket.priority?.toLowerCase()}`}
-                          >
-                            {ticket.priority}
-                          </span>
-                            </td>
+                    <div className="stat-card">
+                      <span>Open Tickets</span>
 
-                            <td>
-                          <span
-                              className={`badge status-${ticket.status?.toLowerCase()}`}
-                          >
-                            {ticket.status?.replace(
-                                '_',
-                                ' '
+                      <strong>
+                        {countByStatus('OPEN')}
+                      </strong>
+
+                      <p>
+                        Waiting for IT support
+                      </p>
+                    </div>
+
+                    <div className="stat-card">
+                      <span>In Progress</span>
+
+                      <strong>
+                        {countByStatus('IN_PROGRESS')}
+                      </strong>
+
+                      <p>
+                        Tickets being worked
+                      </p>
+                    </div>
+
+                    <div className="stat-card">
+                      <span>Resolved</span>
+
+                      <strong>
+                        {countByStatus('RESOLVED')}
+                      </strong>
+
+                      <p>
+                        Completed tickets
+                      </p>
+                    </div>
+
+                    <div className="stat-card">
+                      <span>Assigned to Me</span>
+
+                      <strong>
+                        {assignedToMeTickets.length}
+                      </strong>
+
+                      <p>
+                        Your active workload
+                      </p>
+                    </div>
+
+                  </section>
+
+                  <section className="tickets-section">
+
+                    <div className="section-heading technician-heading">
+
+                      <div>
+                        <h2>
+                          Service Queue
+                        </h2>
+
+                        <p>
+                          Review and work AeroDesk support tickets
+                        </p>
+                      </div>
+
+                      <div className="queue-filters">
+
+                        <button
+                            type="button"
+                            className={
+                              technicianView === 'ALL'
+                                  ? 'queue-filter active'
+                                  : 'queue-filter'
+                            }
+                            onClick={() =>
+                                setTechnicianView('ALL')
+                            }
+                        >
+                          All Tickets
+                        </button>
+
+                        <button
+                            type="button"
+                            className={
+                              technicianView === 'MINE'
+                                  ? 'queue-filter active'
+                                  : 'queue-filter'
+                            }
+                            onClick={() =>
+                                setTechnicianView('MINE')
+                            }
+                        >
+                          Assigned to Me
+                        </button>
+
+                      </div>
+
+                    </div>
+
+                    {displayedTechnicianTickets.length ===
+                    0 ? (
+                        <div className="empty-state">
+
+                          <h3>
+                            No tickets found
+                          </h3>
+
+                          <p>
+                            There are no tickets in this view.
+                          </p>
+
+                        </div>
+                    ) : (
+                        <div className="ticket-table-wrapper">
+
+                          <table className="ticket-table">
+
+                            <thead>
+                            <tr>
+                              <th>ID</th>
+                              <th>Title</th>
+                              <th>Requester</th>
+                              <th>Category</th>
+                              <th>Priority</th>
+                              <th>Status</th>
+                              <th>Technician</th>
+                            </tr>
+                            </thead>
+
+                            <tbody>
+
+                            {displayedTechnicianTickets.map(
+                                (ticket) => (
+                                    <tr
+                                        key={ticket.id}
+                                        className="ticket-row"
+                                        onClick={() =>
+                                            openTicket(ticket)
+                                        }
+                                    >
+
+                                      <td>
+                                        #{ticket.id}
+                                      </td>
+
+                                      <td className="ticket-title">
+                                        {ticket.title}
+                                      </td>
+
+                                      <td>
+                                        {ticket.requester?.name ||
+                                            'Unknown'}
+                                      </td>
+
+                                      <td>
+                                        {ticket.category}
+                                      </td>
+
+                                      <td>
+                                  <span
+                                      className={`badge priority-${ticket.priority?.toLowerCase()}`}
+                                  >
+                                    {ticket.priority}
+                                  </span>
+                                      </td>
+
+                                      <td>
+                                  <span
+                                      className={`badge status-${ticket.status?.toLowerCase()}`}
+                                  >
+                                    {ticket.status?.replace(
+                                        '_',
+                                        ' '
+                                    )}
+                                  </span>
+                                      </td>
+
+                                      <td>
+                                        {ticket
+                                                .assignedTechnician
+                                                ?.name ||
+                                            'Unassigned'}
+                                      </td>
+
+                                    </tr>
+                                )
                             )}
-                          </span>
-                            </td>
 
-                          </tr>
-                      ))}
+                            </tbody>
 
-                      </tbody>
+                          </table>
 
-                    </table>
+                        </div>
+                    )}
 
-                  </div>
-              )}
-
-            </section>
+                  </section>
+                </>
+            )}
 
           </main>
 
