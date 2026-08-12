@@ -5,7 +5,9 @@ import LoginPage from './pages/LoginPage'
 import CreateTicketModal from './components/CreateTicketModal'
 import CreateUserModal from './components/CreateUserModal'
 import TicketDetailsModal from './components/TicketDetailsModal'
-import TicketTable from './components/TicketTable'
+import EmployeeDashboard from './pages/EmployeeDashboard'
+import TechnicianDashboard from './pages/TechnicianDashboard'
+import AdminDashboard from './pages/AdminDashboard'
 
 function App() {
   const [email, setEmail] = useState('')
@@ -510,58 +512,45 @@ function App() {
 
           <main className="dashboard-content">
 
-            <div className="welcome-section">
+            {isEmployee && (
+                <EmployeeDashboard
+                    user={user}
+                    tickets={tickets}
+                    countByStatus={countByStatus}
+                    onCreateTicket={() => setShowCreateTicket(true)}
+                    onOpenTicket={openTicket}
+                />
+            )}
 
-              <div>
+            {isTechnician && (
+                <TechnicianDashboard
+                    user={user}
+                    tickets={tickets}
+                    countByStatus={countByStatus}
+                    assignedToMeTickets={assignedToMeTickets}
+                    technicianView={technicianView}
+                    setTechnicianView={setTechnicianView}
+                    displayedTechnicianTickets={displayedTechnicianTickets}
+                    onOpenTicket={openTicket}
+                />
+            )}
 
-                <p className="eyebrow">
-                  {isEmployee
-                      ? 'EMPLOYEE PORTAL'
-                      : isTechnician
-                          ? 'TECHNICIAN PORTAL'
-                          : 'ADMIN PORTAL'}
-                </p>
-
-                <h1>
-                  Welcome back, {user.name}
-                </h1>
-
-                <p>
-                  {isEmployee
-                      ? 'View and manage your IT support requests.'
-                      : isTechnician
-                          ? 'Review and manage IT support tickets across AeroDesk.'
-                          : 'Manage AeroDesk tickets, assignments, and user accounts.'}
-                </p>
-
-              </div>
-
-              {isEmployee && (
-                  <button
-                      type="button"
-                      className="create-ticket-button"
-                      onClick={() =>
-                          setShowCreateTicket(true)
-                      }
-                  >
-                    + Create Ticket
-                  </button>
-              )}
-
-              {isAdmin && adminView === 'USERS' && (
-                  <button
-                      type="button"
-                      className="create-ticket-button"
-                      onClick={() => {
-                        setUserMessage('')
-                        setShowCreateUser(true)
-                      }}
-                  >
-                    + Create User
-                  </button>
-              )}
-
-            </div>
+            {isAdmin && (
+                <AdminDashboard
+                    user={user}
+                    tickets={tickets}
+                    users={users}
+                    adminView={adminView}
+                    setAdminView={setAdminView}
+                    countByStatus={countByStatus}
+                    technicianUsers={technicianUsers}
+                    onOpenTicket={openTicket}
+                    onCreateUser={() => {
+                      setUserMessage('')
+                      setShowCreateUser(true)
+                    }}
+                />
+            )}
 
             {showCreateTicket && isEmployee && (
                 <CreateTicketModal
@@ -586,8 +575,6 @@ function App() {
                 />
             )}
 
-
-
             {selectedTicket && (
                 <TicketDetailsModal
                     selectedTicket={selectedTicket}
@@ -608,386 +595,6 @@ function App() {
                     commentError={commentError}
                     onAddComment={handleAddComment}
                 />
-            )}
-
-
-
-            {isEmployee && (
-                <>
-                  <section className="stats-grid">
-
-                    <div className="stat-card">
-                      <span>Open</span>
-                      <strong>
-                        {countByStatus('OPEN')}
-                      </strong>
-                      <p>
-                        Tickets awaiting support
-                      </p>
-                    </div>
-
-                    <div className="stat-card">
-                      <span>In Progress</span>
-                      <strong>
-                        {countByStatus('IN_PROGRESS')}
-                      </strong>
-                      <p>
-                        Currently being worked
-                      </p>
-                    </div>
-
-                    <div className="stat-card">
-                      <span>Resolved</span>
-                      <strong>
-                        {countByStatus('RESOLVED')}
-                      </strong>
-                      <p>
-                        Completed requests
-                      </p>
-                    </div>
-
-                    <div className="stat-card">
-                      <span>Total Tickets</span>
-                      <strong>
-                        {tickets.length}
-                      </strong>
-                      <p>
-                        Your submitted requests
-                      </p>
-                    </div>
-
-                  </section>
-
-                  <section className="tickets-section">
-
-                    <div className="section-heading">
-
-                      <div>
-                        <h2>
-                          My Tickets
-                        </h2>
-
-                        <p>
-                          Your recent IT support requests
-                        </p>
-                      </div>
-
-                    </div>
-
-                    <TicketTable
-                        tickets={tickets}
-                        onOpenTicket={openTicket}
-                    />
-
-                  </section>
-                </>
-            )}
-
-            {isTechnician && (
-                <>
-                  <section className="stats-grid">
-
-                    <div className="stat-card">
-                      <span>Open Tickets</span>
-
-                      <strong>
-                        {countByStatus('OPEN')}
-                      </strong>
-
-                      <p>
-                        Waiting for IT support
-                      </p>
-                    </div>
-
-                    <div className="stat-card">
-                      <span>In Progress</span>
-
-                      <strong>
-                        {countByStatus('IN_PROGRESS')}
-                      </strong>
-
-                      <p>
-                        Tickets being worked
-                      </p>
-                    </div>
-
-                    <div className="stat-card">
-                      <span>Resolved</span>
-
-                      <strong>
-                        {countByStatus('RESOLVED')}
-                      </strong>
-
-                      <p>
-                        Completed tickets
-                      </p>
-                    </div>
-
-                    <div className="stat-card">
-                      <span>Assigned to Me</span>
-
-                      <strong>
-                        {assignedToMeTickets.length}
-                      </strong>
-
-                      <p>
-                        Your active workload
-                      </p>
-                    </div>
-
-                  </section>
-
-                  <section className="tickets-section">
-
-                    <div className="section-heading technician-heading">
-
-                      <div>
-                        <h2>
-                          Service Queue
-                        </h2>
-
-                        <p>
-                          Review and work AeroDesk support tickets
-                        </p>
-                      </div>
-
-                      <div className="queue-filters">
-
-                        <button
-                            type="button"
-                            className={
-                              technicianView === 'ALL'
-                                  ? 'queue-filter active'
-                                  : 'queue-filter'
-                            }
-                            onClick={() =>
-                                setTechnicianView('ALL')
-                            }
-                        >
-                          All Tickets
-                        </button>
-
-                        <button
-                            type="button"
-                            className={
-                              technicianView === 'MINE'
-                                  ? 'queue-filter active'
-                                  : 'queue-filter'
-                            }
-                            onClick={() =>
-                                setTechnicianView('MINE')
-                            }
-                        >
-                          Assigned to Me
-                        </button>
-
-                      </div>
-
-                    </div>
-
-                    <TicketTable
-                        tickets={displayedTechnicianTickets}
-                        onOpenTicket={openTicket}
-                        showRequester={true}
-                        showTechnician={true}
-                    />
-
-                  </section>
-                </>
-            )}
-
-            {isAdmin && (
-                <>
-
-                  <div className="admin-navigation">
-
-                    <button
-                        type="button"
-                        className={
-                          adminView === 'TICKETS'
-                              ? 'admin-nav-button active'
-                              : 'admin-nav-button'
-                        }
-                        onClick={() => setAdminView('TICKETS')}
-                    >
-                      Ticket Management
-                    </button>
-
-                    <button
-                        type="button"
-                        className={
-                          adminView === 'USERS'
-                              ? 'admin-nav-button active'
-                              : 'admin-nav-button'
-                        }
-                        onClick={() => setAdminView('USERS')}
-                    >
-                      User Management
-                    </button>
-
-                  </div>
-
-                  {adminView === 'TICKETS' && (
-                      <>
-
-                        <section className="stats-grid">
-
-                          <div className="stat-card">
-                            <span>Open Tickets</span>
-                            <strong>{countByStatus('OPEN')}</strong>
-                            <p>Waiting for support</p>
-                          </div>
-
-                          <div className="stat-card">
-                            <span>In Progress</span>
-                            <strong>{countByStatus('IN_PROGRESS')}</strong>
-                            <p>Currently being worked</p>
-                          </div>
-
-                          <div className="stat-card">
-                            <span>Resolved</span>
-                            <strong>{countByStatus('RESOLVED')}</strong>
-                            <p>Completed requests</p>
-                          </div>
-
-                          <div className="stat-card">
-                            <span>Total Tickets</span>
-                            <strong>{tickets.length}</strong>
-                            <p>All AeroDesk requests</p>
-                          </div>
-
-                        </section>
-
-                        <section className="tickets-section">
-
-                          <div className="section-heading">
-                            <div>
-                              <h2>Ticket Management</h2>
-                              <p>
-                                View, assign, update, and manage all support tickets.
-                              </p>
-                            </div>
-                          </div>
-
-                          <TicketTable
-                              tickets={tickets}
-                              onOpenTicket={openTicket}
-                              showRequester={true}
-                              showTechnician={true}
-                          />
-
-                        </section>
-
-                      </>
-                  )}
-
-                  {adminView === 'USERS' && (
-                      <>
-
-                        <section className="stats-grid">
-
-                          <div className="stat-card">
-                            <span>Total Users</span>
-                            <strong>{users.length}</strong>
-                            <p>All AeroDesk accounts</p>
-                          </div>
-
-                          <div className="stat-card">
-                            <span>Employees</span>
-                            <strong>
-                              {
-                                users.filter(
-                                    (account) =>
-                                        account.role === 'EMPLOYEE'
-                                ).length
-                              }
-                            </strong>
-                            <p>Employee accounts</p>
-                          </div>
-
-                          <div className="stat-card">
-                            <span>Technicians</span>
-                            <strong>{technicianUsers.length}</strong>
-                            <p>IT support accounts</p>
-                          </div>
-
-                          <div className="stat-card">
-                            <span>Administrators</span>
-                            <strong>
-                              {
-                                users.filter(
-                                    (account) =>
-                                        account.role === 'ADMIN'
-                                ).length
-                              }
-                            </strong>
-                            <p>Administrative accounts</p>
-                          </div>
-
-                        </section>
-
-                        <section className="tickets-section">
-
-                          <div className="section-heading">
-                            <div>
-                              <h2>User Management</h2>
-                              <p>
-                                Review AeroDesk accounts and their assigned roles.
-                              </p>
-                            </div>
-                          </div>
-
-                          {users.length === 0 ? (
-                              <div className="empty-state">
-                                <h3>No users found</h3>
-                                <p>No AeroDesk accounts are available.</p>
-                              </div>
-                          ) : (
-                              <div className="ticket-table-wrapper">
-
-                                <table className="ticket-table">
-
-                                  <thead>
-                                  <tr>
-                                    <th>ID</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Role</th>
-                                  </tr>
-                                  </thead>
-
-                                  <tbody>
-
-                                  {users.map((account) => (
-                                      <tr key={account.id}>
-                                        <td>#{account.id}</td>
-                                        <td className="ticket-title">
-                                          {account.name}
-                                        </td>
-                                        <td>{account.email}</td>
-                                        <td>
-                                          <span
-                                              className={`badge role-${account.role?.toLowerCase()}`}
-                                          >
-                                            {account.role}
-                                          </span>
-                                        </td>
-                                      </tr>
-                                  ))}
-
-                                  </tbody>
-
-                                </table>
-
-                              </div>
-                          )}
-
-                        </section>
-
-                      </>
-                  )}
-
-                </>
             )}
 
           </main>
