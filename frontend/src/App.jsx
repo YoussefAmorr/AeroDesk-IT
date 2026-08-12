@@ -1,13 +1,33 @@
 import { useState } from 'react'
 import './App.css'
+
 import DashboardHeader from './components/DashboardHeader'
-import LoginPage from './pages/LoginPage'
 import CreateTicketModal from './components/CreateTicketModal'
 import CreateUserModal from './components/CreateUserModal'
 import TicketDetailsModal from './components/TicketDetailsModal'
+
+import LoginPage from './pages/LoginPage'
 import EmployeeDashboard from './pages/EmployeeDashboard'
 import TechnicianDashboard from './pages/TechnicianDashboard'
 import AdminDashboard from './pages/AdminDashboard'
+
+import { login } from './services/authService'
+
+import {
+  addComment,
+  assignTechnician,
+  createTicket,
+  deleteTicket,
+  getComments,
+  getTicketById,
+  getTickets,
+  updateTicketStatus,
+} from './services/ticketService'
+
+import {
+  createUser,
+  getUsers,
+} from './services/userService'
 
 function App() {
   const [email, setEmail] = useState('')
@@ -18,7 +38,8 @@ function App() {
   const [user, setUser] = useState(null)
   const [tickets, setTickets] = useState([])
 
-  const [showCreateTicket, setShowCreateTicket] = useState(false)
+  const [showCreateTicket, setShowCreateTicket] =
+      useState(false)
 
   const [newTicket, setNewTicket] = useState({
     title: '',
@@ -27,65 +48,55 @@ function App() {
     priority: 'MEDIUM',
   })
 
-  const [ticketMessage, setTicketMessage] = useState('')
+  const [ticketMessage, setTicketMessage] =
+      useState('')
 
-  const [selectedTicket, setSelectedTicket] = useState(null)
+  const [selectedTicket, setSelectedTicket] =
+      useState(null)
+
   const [comments, setComments] = useState([])
   const [newComment, setNewComment] = useState('')
   const [commentError, setCommentError] = useState('')
 
   const [statusError, setStatusError] = useState('')
-  const [updatingStatus, setUpdatingStatus] = useState(false)
+  const [updatingStatus, setUpdatingStatus] =
+      useState(false)
 
-  const [technicianView, setTechnicianView] = useState('ALL')
+  const [technicianView, setTechnicianView] =
+      useState('ALL')
 
   // Admin portal state
   const [users, setUsers] = useState([])
-  const [adminView, setAdminView] = useState('TICKETS')
-  const [showCreateUser, setShowCreateUser] = useState(false)
+  const [adminView, setAdminView] =
+      useState('TICKETS')
+
+  const [showCreateUser, setShowCreateUser] =
+      useState(false)
+
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
     role: 'EMPLOYEE',
     password: '',
   })
+
   const [userMessage, setUserMessage] = useState('')
-  const [adminActionError, setAdminActionError] = useState('')
-  const [adminActionLoading, setAdminActionLoading] = useState(false)
+
+  const [adminActionError, setAdminActionError] =
+      useState('')
+
+  const [
+    adminActionLoading,
+    setAdminActionLoading,
+  ] = useState(false)
 
   const loadTickets = async (token) => {
-    const response = await fetch(
-        'http://localhost:8080/api/tickets',
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-    )
-
-    if (!response.ok) {
-      throw new Error('Unable to load tickets')
-    }
-
-    const data = await response.json()
+    const data = await getTickets(token)
     setTickets(data)
   }
 
   const loadUsers = async (token) => {
-    const response = await fetch(
-        'http://localhost:8080/api/users',
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-    )
-
-    if (!response.ok) {
-      throw new Error('Unable to load users')
-    }
-
-    const data = await response.json()
+    const data = await getUsers(token)
     setUsers(data)
   }
 
@@ -98,35 +109,11 @@ function App() {
     setNewComment('')
 
     try {
-      const ticketResponse = await fetch(
-          `http://localhost:8080/api/tickets/${ticket.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-      )
-
-      if (!ticketResponse.ok) {
-        throw new Error('Unable to load ticket')
-      }
-
-      const ticketData = await ticketResponse.json()
-
-      const commentsResponse = await fetch(
-          `http://localhost:8080/api/tickets/${ticket.id}/comments`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-      )
-
-      if (!commentsResponse.ok) {
-        throw new Error('Unable to load comments')
-      }
-
-      const commentsData = await commentsResponse.json()
+      const [ticketData, commentsData] =
+          await Promise.all([
+            getTicketById(ticket.id, token),
+            getComments(ticket.id, token),
+          ])
 
       setSelectedTicket(ticketData)
       setComments(commentsData)
@@ -141,22 +128,7 @@ function App() {
     const token = localStorage.getItem('token')
 
     try {
-      const response = await fetch(
-          'http://localhost:8080/api/tickets',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(newTicket),
-          }
-      )
-
-      if (!response.ok) {
-        setTicketMessage('Unable to create ticket.')
-        return
-      }
+      await createTicket(newTicket, token)
 
       setNewTicket({
         title: '',
@@ -170,7 +142,17 @@ function App() {
 
       await loadTickets(token)
     } catch (error) {
-      setTicketMessage('Unable to connect to AeroDesk.')
+      if (
+          error.message === 'Unable to create ticket.'
+      ) {
+        setTicketMessage(
+            'Unable to create ticket.'
+        )
+      } else {
+        setTicketMessage(
+            'Unable to connect to AeroDesk.'
+        )
+      }
     }
   }
 
@@ -186,24 +168,11 @@ function App() {
     setCommentError('')
 
     try {
-      const response = await fetch(
-          `http://localhost:8080/api/tickets/${selectedTicket.id}/comments`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'text/plain',
-              Authorization: `Bearer ${token}`,
-            },
-            body: newComment,
-          }
+      const savedComment = await addComment(
+          selectedTicket.id,
+          newComment,
+          token
       )
-
-      if (!response.ok) {
-        setCommentError('Unable to add comment.')
-        return
-      }
-
-      const savedComment = await response.json()
 
       setComments((currentComments) => [
         ...currentComments,
@@ -212,7 +181,17 @@ function App() {
 
       setNewComment('')
     } catch (error) {
-      setCommentError('Unable to connect to AeroDesk.')
+      if (
+          error.message === 'Unable to add comment.'
+      ) {
+        setCommentError(
+            'Unable to add comment.'
+        )
+      } else {
+        setCommentError(
+            'Unable to connect to AeroDesk.'
+        )
+      }
     }
   }
 
@@ -223,22 +202,12 @@ function App() {
     setUpdatingStatus(true)
 
     try {
-      const response = await fetch(
-          `http://localhost:8080/api/tickets/${selectedTicket.id}/status/${newStatus}`,
-          {
-            method: 'PUT',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-      )
-
-      if (!response.ok) {
-        setStatusError('Unable to update ticket status.')
-        return
-      }
-
-      const updatedTicket = await response.json()
+      const updatedTicket =
+          await updateTicketStatus(
+              selectedTicket.id,
+              newStatus,
+              token
+          )
 
       setSelectedTicket(updatedTicket)
 
@@ -250,7 +219,18 @@ function App() {
           )
       )
     } catch (error) {
-      setStatusError('Unable to connect to AeroDesk.')
+      if (
+          error.message ===
+          'Unable to update ticket status.'
+      ) {
+        setStatusError(
+            'Unable to update ticket status.'
+        )
+      } else {
+        setStatusError(
+            'Unable to connect to AeroDesk.'
+        )
+      }
     } finally {
       setUpdatingStatus(false)
     }
@@ -260,33 +240,11 @@ function App() {
     event.preventDefault()
 
     const token = localStorage.getItem('token')
+
     setUserMessage('')
 
     try {
-      const response = await fetch(
-          'http://localhost:8080/api/users',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(newUser),
-          }
-      )
-
-      if (!response.ok) {
-        let errorMessage = 'Unable to create user.'
-
-        if (response.status === 409) {
-          errorMessage = 'A user with this email already exists.'
-        } else if (response.status === 400) {
-          errorMessage = 'Please check the user information and try again.'
-        }
-
-        setUserMessage(errorMessage)
-        return
-      }
+      await createUser(newUser, token)
 
       setNewUser({
         name: '',
@@ -297,38 +255,49 @@ function App() {
 
       setUserMessage('')
       setShowCreateUser(false)
+
       await loadUsers(token)
     } catch (error) {
-      setUserMessage('Unable to connect to AeroDesk.')
+      if (error.status === 409) {
+        setUserMessage(
+            'A user with this email already exists.'
+        )
+      } else if (error.status === 400) {
+        setUserMessage(
+            'Please check the user information and try again.'
+        )
+      } else if (error.status) {
+        setUserMessage(
+            'Unable to create user.'
+        )
+      } else {
+        setUserMessage(
+            'Unable to connect to AeroDesk.'
+        )
+      }
     }
   }
 
-  const handleAssignTechnician = async (technicianId) => {
+  const handleAssignTechnician = async (
+      technicianId
+  ) => {
     if (!selectedTicket || !technicianId) {
       return
     }
 
     const token = localStorage.getItem('token')
+
     setAdminActionError('')
     setAdminActionLoading(true)
 
     try {
-      const response = await fetch(
-          `http://localhost:8080/api/tickets/${selectedTicket.id}/assign/${technicianId}`,
-          {
-            method: 'PUT',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-      )
+      const updatedTicket =
+          await assignTechnician(
+              selectedTicket.id,
+              technicianId,
+              token
+          )
 
-      if (!response.ok) {
-        setAdminActionError('Unable to assign technician.')
-        return
-      }
-
-      const updatedTicket = await response.json()
       setSelectedTicket(updatedTicket)
 
       setTickets((currentTickets) =>
@@ -339,7 +308,18 @@ function App() {
           )
       )
     } catch (error) {
-      setAdminActionError('Unable to connect to AeroDesk.')
+      if (
+          error.message ===
+          'Unable to assign technician.'
+      ) {
+        setAdminActionError(
+            'Unable to assign technician.'
+        )
+      } else {
+        setAdminActionError(
+            'Unable to connect to AeroDesk.'
+        )
+      }
     } finally {
       setAdminActionLoading(false)
     }
@@ -359,34 +339,37 @@ function App() {
     }
 
     const token = localStorage.getItem('token')
+
     setAdminActionError('')
     setAdminActionLoading(true)
 
     try {
-      const response = await fetch(
-          `http://localhost:8080/api/tickets/${selectedTicket.id}`,
-          {
-            method: 'DELETE',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+      await deleteTicket(
+          selectedTicket.id,
+          token
       )
-
-      if (!response.ok) {
-        setAdminActionError('Unable to delete ticket.')
-        return
-      }
 
       setTickets((currentTickets) =>
           currentTickets.filter(
-              (ticket) => ticket.id !== selectedTicket.id
+              (ticket) =>
+                  ticket.id !== selectedTicket.id
           )
       )
 
       closeTicketDetails()
     } catch (error) {
-      setAdminActionError('Unable to connect to AeroDesk.')
+      if (
+          error.message ===
+          'Unable to delete ticket.'
+      ) {
+        setAdminActionError(
+            'Unable to delete ticket.'
+        )
+      } else {
+        setAdminActionError(
+            'Unable to connect to AeroDesk.'
+        )
+      }
     } finally {
       setAdminActionLoading(false)
     }
@@ -399,29 +382,20 @@ function App() {
     setMessage('')
 
     try {
-      const response = await fetch(
-          'http://localhost:8080/api/auth/login',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email,
-              password,
-            }),
-          }
+      const data = await login(
+          email,
+          password
       )
 
-      if (!response.ok) {
-        setMessage('Invalid email or password.')
-        return
-      }
+      localStorage.setItem(
+          'token',
+          data.token
+      )
 
-      const data = await response.json()
-
-      localStorage.setItem('token', data.token)
-      localStorage.setItem('user', JSON.stringify(data))
+      localStorage.setItem(
+          'user',
+          JSON.stringify(data)
+      )
 
       setUser(data)
 
@@ -431,7 +405,15 @@ function App() {
         await loadUsers(data.token)
       }
     } catch (error) {
-      setMessage('Unable to connect to AeroDesk.')
+      if (error.status) {
+        setMessage(
+            'Invalid email or password.'
+        )
+      } else {
+        setMessage(
+            'Unable to connect to AeroDesk.'
+        )
+      }
     } finally {
       setLoading(false)
     }
@@ -449,18 +431,22 @@ function App() {
     setCommentError('')
     setStatusError('')
     setTechnicianView('ALL')
+
     setUsers([])
     setAdminView('TICKETS')
     setShowCreateUser(false)
+
     setNewUser({
       name: '',
       email: '',
       role: 'EMPLOYEE',
       password: '',
     })
+
     setUserMessage('')
     setAdminActionError('')
     setAdminActionLoading(false)
+
     setEmail('')
     setPassword('')
     setMessage('')
@@ -484,7 +470,8 @@ function App() {
   const assignedToMeTickets = user
       ? tickets.filter(
           (ticket) =>
-              ticket.assignedTechnician?.id === user.id
+              ticket.assignedTechnician?.id ===
+              user.id
       )
       : []
 
@@ -493,12 +480,18 @@ function App() {
           ? assignedToMeTickets
           : tickets
 
-  const isEmployee = user?.role === 'EMPLOYEE'
-  const isTechnician = user?.role === 'TECHNICIAN'
-  const isAdmin = user?.role === 'ADMIN'
+  const isEmployee =
+      user?.role === 'EMPLOYEE'
+
+  const isTechnician =
+      user?.role === 'TECHNICIAN'
+
+  const isAdmin =
+      user?.role === 'ADMIN'
 
   const technicianUsers = users.filter(
-      (account) => account.role === 'TECHNICIAN'
+      (account) =>
+          account.role === 'TECHNICIAN'
   )
 
   if (user) {
@@ -517,7 +510,9 @@ function App() {
                     user={user}
                     tickets={tickets}
                     countByStatus={countByStatus}
-                    onCreateTicket={() => setShowCreateTicket(true)}
+                    onCreateTicket={() =>
+                        setShowCreateTicket(true)
+                    }
                     onOpenTicket={openTicket}
                 />
             )}
@@ -527,10 +522,18 @@ function App() {
                     user={user}
                     tickets={tickets}
                     countByStatus={countByStatus}
-                    assignedToMeTickets={assignedToMeTickets}
-                    technicianView={technicianView}
-                    setTechnicianView={setTechnicianView}
-                    displayedTechnicianTickets={displayedTechnicianTickets}
+                    assignedToMeTickets={
+                      assignedToMeTickets
+                    }
+                    technicianView={
+                      technicianView
+                    }
+                    setTechnicianView={
+                      setTechnicianView
+                    }
+                    displayedTechnicianTickets={
+                      displayedTechnicianTickets
+                    }
                     onOpenTicket={openTicket}
                 />
             )}
@@ -543,7 +546,9 @@ function App() {
                     adminView={adminView}
                     setAdminView={setAdminView}
                     countByStatus={countByStatus}
-                    technicianUsers={technicianUsers}
+                    technicianUsers={
+                      technicianUsers
+                    }
                     onOpenTicket={openTicket}
                     onCreateUser={() => {
                       setUserMessage('')
@@ -552,48 +557,90 @@ function App() {
                 />
             )}
 
-            {showCreateTicket && isEmployee && (
-                <CreateTicketModal
-                    newTicket={newTicket}
-                    setNewTicket={setNewTicket}
-                    ticketMessage={ticketMessage}
-                    onClose={() => setShowCreateTicket(false)}
-                    onSubmit={handleCreateTicket}
-                />
-            )}
+            {showCreateTicket &&
+                isEmployee && (
+                    <CreateTicketModal
+                        newTicket={newTicket}
+                        setNewTicket={
+                          setNewTicket
+                        }
+                        ticketMessage={
+                          ticketMessage
+                        }
+                        onClose={() =>
+                            setShowCreateTicket(
+                                false
+                            )
+                        }
+                        onSubmit={
+                          handleCreateTicket
+                        }
+                    />
+                )}
 
-            {showCreateUser && isAdmin && (
-                <CreateUserModal
-                    newUser={newUser}
-                    setNewUser={setNewUser}
-                    userMessage={userMessage}
-                    onClose={() => {
-                      setShowCreateUser(false)
-                      setUserMessage('')
-                    }}
-                    onSubmit={handleCreateUser}
-                />
-            )}
+            {showCreateUser &&
+                isAdmin && (
+                    <CreateUserModal
+                        newUser={newUser}
+                        setNewUser={setNewUser}
+                        userMessage={
+                          userMessage
+                        }
+                        onClose={() => {
+                          setShowCreateUser(false)
+                          setUserMessage('')
+                        }}
+                        onSubmit={
+                          handleCreateUser
+                        }
+                    />
+                )}
 
             {selectedTicket && (
                 <TicketDetailsModal
-                    selectedTicket={selectedTicket}
-                    onClose={closeTicketDetails}
-                    isTechnician={isTechnician}
+                    selectedTicket={
+                      selectedTicket
+                    }
+                    onClose={
+                      closeTicketDetails
+                    }
+                    isTechnician={
+                      isTechnician
+                    }
                     isAdmin={isAdmin}
-                    technicianUsers={technicianUsers}
-                    adminActionLoading={adminActionLoading}
-                    adminActionError={adminActionError}
-                    onAssignTechnician={handleAssignTechnician}
-                    onDeleteTicket={handleDeleteTicket}
-                    updatingStatus={updatingStatus}
+                    technicianUsers={
+                      technicianUsers
+                    }
+                    adminActionLoading={
+                      adminActionLoading
+                    }
+                    adminActionError={
+                      adminActionError
+                    }
+                    onAssignTechnician={
+                      handleAssignTechnician
+                    }
+                    onDeleteTicket={
+                      handleDeleteTicket
+                    }
+                    updatingStatus={
+                      updatingStatus
+                    }
                     statusError={statusError}
-                    onUpdateStatus={handleUpdateStatus}
+                    onUpdateStatus={
+                      handleUpdateStatus
+                    }
                     comments={comments}
                     newComment={newComment}
-                    setNewComment={setNewComment}
-                    commentError={commentError}
-                    onAddComment={handleAddComment}
+                    setNewComment={
+                      setNewComment
+                    }
+                    commentError={
+                      commentError
+                    }
+                    onAddComment={
+                      handleAddComment
+                    }
                 />
             )}
 
