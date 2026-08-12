@@ -65,6 +65,13 @@ function App() {
   const [technicianView, setTechnicianView] =
       useState('ALL')
 
+  // Ticket search and filter state
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('ALL')
+  const [priorityFilter, setPriorityFilter] = useState('ALL')
+  const [categoryFilter, setCategoryFilter] = useState('ALL')
+  const [technicianFilter, setTechnicianFilter] = useState('ALL')
+
   // Admin portal state
   const [users, setUsers] = useState([])
   const [adminView, setAdminView] =
@@ -432,6 +439,12 @@ function App() {
     setStatusError('')
     setTechnicianView('ALL')
 
+    setSearchTerm('')
+    setStatusFilter('ALL')
+    setPriorityFilter('ALL')
+    setCategoryFilter('ALL')
+    setTechnicianFilter('ALL')
+
     setUsers([])
     setAdminView('TICKETS')
     setShowCreateUser(false)
@@ -467,6 +480,45 @@ function App() {
     ).length
   }
 
+  const filterTickets = (ticketList) => {
+    return ticketList.filter((ticket) => {
+      const search = searchTerm.trim().toLowerCase()
+
+      const matchesSearch =
+          !search ||
+          String(ticket.id).includes(search) ||
+          ticket.title?.toLowerCase().includes(search) ||
+          ticket.requester?.name?.toLowerCase().includes(search)
+
+      const matchesStatus =
+          statusFilter === 'ALL' ||
+          ticket.status === statusFilter
+
+      const matchesPriority =
+          priorityFilter === 'ALL' ||
+          ticket.priority === priorityFilter
+
+      const matchesCategory =
+          categoryFilter === 'ALL' ||
+          ticket.category === categoryFilter
+
+      const matchesTechnician =
+          technicianFilter === 'ALL' ||
+          (technicianFilter === 'UNASSIGNED' &&
+              !ticket.assignedTechnician) ||
+          String(ticket.assignedTechnician?.id) ===
+          technicianFilter
+
+      return (
+          matchesSearch &&
+          matchesStatus &&
+          matchesPriority &&
+          matchesCategory &&
+          matchesTechnician
+      )
+    })
+  }
+
   const assignedToMeTickets = user
       ? tickets.filter(
           (ticket) =>
@@ -479,6 +531,15 @@ function App() {
       technicianView === 'MINE'
           ? assignedToMeTickets
           : tickets
+
+  const filteredEmployeeTickets =
+      filterTickets(tickets)
+
+  const filteredTechnicianTickets =
+      filterTickets(displayedTechnicianTickets)
+
+  const filteredAdminTickets =
+      filterTickets(tickets)
 
   const isEmployee =
       user?.role === 'EMPLOYEE'
@@ -509,11 +570,20 @@ function App() {
                 <EmployeeDashboard
                     user={user}
                     tickets={tickets}
+                    filteredTickets={filteredEmployeeTickets}
                     countByStatus={countByStatus}
                     onCreateTicket={() =>
                         setShowCreateTicket(true)
                     }
                     onOpenTicket={openTicket}
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                    statusFilter={statusFilter}
+                    setStatusFilter={setStatusFilter}
+                    priorityFilter={priorityFilter}
+                    setPriorityFilter={setPriorityFilter}
+                    categoryFilter={categoryFilter}
+                    setCategoryFilter={setCategoryFilter}
                 />
             )}
 
@@ -531,10 +601,19 @@ function App() {
                     setTechnicianView={
                       setTechnicianView
                     }
-                    displayedTechnicianTickets={
-                      displayedTechnicianTickets
+
+                    filteredTickets={
+                      filteredTechnicianTickets
                     }
                     onOpenTicket={openTicket}
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                    statusFilter={statusFilter}
+                    setStatusFilter={setStatusFilter}
+                    priorityFilter={priorityFilter}
+                    setPriorityFilter={setPriorityFilter}
+                    categoryFilter={categoryFilter}
+                    setCategoryFilter={setCategoryFilter}
                 />
             )}
 
@@ -542,6 +621,7 @@ function App() {
                 <AdminDashboard
                     user={user}
                     tickets={tickets}
+                    filteredTickets={filteredAdminTickets}
                     users={users}
                     adminView={adminView}
                     setAdminView={setAdminView}
@@ -554,6 +634,16 @@ function App() {
                       setUserMessage('')
                       setShowCreateUser(true)
                     }}
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                    statusFilter={statusFilter}
+                    setStatusFilter={setStatusFilter}
+                    priorityFilter={priorityFilter}
+                    setPriorityFilter={setPriorityFilter}
+                    categoryFilter={categoryFilter}
+                    setCategoryFilter={setCategoryFilter}
+                    technicianFilter={technicianFilter}
+                    setTechnicianFilter={setTechnicianFilter}
                 />
             )}
 

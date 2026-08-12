@@ -1,16 +1,25 @@
 import TicketTable from '../components/TicketTable'
+import TicketFilters from '../components/TicketFilters'
 
 function EmployeeDashboard({
                                user,
                                tickets,
+                               filteredTickets,
                                countByStatus,
                                onCreateTicket,
                                onOpenTicket,
+                               searchTerm,
+                               setSearchTerm,
+                               statusFilter,
+                               setStatusFilter,
+                               priorityFilter,
+                               setPriorityFilter,
+                               categoryFilter,
+                               setCategoryFilter,
                            }) {
     return (
         <>
             <div className="welcome-section">
-
                 <div>
                     <p className="eyebrow">
                         EMPLOYEE PORTAL
@@ -32,11 +41,9 @@ function EmployeeDashboard({
                 >
                     + Create Ticket
                 </button>
-
             </div>
 
             <section className="stats-grid">
-
                 <div className="stat-card">
                     <span>Open</span>
 
@@ -84,11 +91,9 @@ function EmployeeDashboard({
                         Your submitted requests
                     </p>
                 </div>
-
             </section>
 
             <section className="tickets-section">
-
                 <div className="section-heading">
                     <div>
                         <h2>
@@ -101,11 +106,21 @@ function EmployeeDashboard({
                     </div>
                 </div>
 
-                <TicketTable
-                    tickets={tickets}
-                    onOpenTicket={onOpenTicket}
+                <TicketFilters
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                    statusFilter={statusFilter}
+                    setStatusFilter={setStatusFilter}
+                    priorityFilter={priorityFilter}
+                    setPriorityFilter={setPriorityFilter}
+                    categoryFilter={categoryFilter}
+                    setCategoryFilter={setCategoryFilter}
                 />
 
+                <TicketTable
+                    tickets={filteredTickets}
+                    onOpenTicket={onOpenTicket}
+                />
             </section>
         </>
     )

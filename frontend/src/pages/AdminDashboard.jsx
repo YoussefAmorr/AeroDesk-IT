@@ -1,8 +1,10 @@
 import TicketTable from '../components/TicketTable'
+import TicketFilters from '../components/TicketFilters'
 
 function AdminDashboard({
                             user,
                             tickets,
+                            filteredTickets,
                             users,
                             adminView,
                             setAdminView,
@@ -10,6 +12,16 @@ function AdminDashboard({
                             technicianUsers,
                             onOpenTicket,
                             onCreateUser,
+                            searchTerm,
+                            setSearchTerm,
+                            statusFilter,
+                            setStatusFilter,
+                            priorityFilter,
+                            setPriorityFilter,
+                            categoryFilter,
+                            setCategoryFilter,
+                            technicianFilter,
+                            setTechnicianFilter,
                         }) {
     const employeeCount = users.filter(
         (account) => account.role === 'EMPLOYEE'
@@ -22,7 +34,6 @@ function AdminDashboard({
     return (
         <>
             <div className="welcome-section">
-
                 <div>
                     <p className="eyebrow">
                         ADMIN PORTAL
@@ -46,11 +57,9 @@ function AdminDashboard({
                         + Create User
                     </button>
                 )}
-
             </div>
 
             <div className="admin-navigation">
-
                 <button
                     type="button"
                     className={
@@ -78,13 +87,11 @@ function AdminDashboard({
                 >
                     User Management
                 </button>
-
             </div>
 
             {adminView === 'TICKETS' && (
                 <>
                     <section className="stats-grid">
-
                         <div className="stat-card">
               <span>
                 Open Tickets
@@ -140,11 +147,9 @@ function AdminDashboard({
                                 All AeroDesk requests
                             </p>
                         </div>
-
                     </section>
 
                     <section className="tickets-section">
-
                         <div className="section-heading">
                             <div>
                                 <h2>
@@ -157,13 +162,27 @@ function AdminDashboard({
                             </div>
                         </div>
 
+                        <TicketFilters
+                            searchTerm={searchTerm}
+                            setSearchTerm={setSearchTerm}
+                            statusFilter={statusFilter}
+                            setStatusFilter={setStatusFilter}
+                            priorityFilter={priorityFilter}
+                            setPriorityFilter={setPriorityFilter}
+                            categoryFilter={categoryFilter}
+                            setCategoryFilter={setCategoryFilter}
+                            technicianFilter={technicianFilter}
+                            setTechnicianFilter={setTechnicianFilter}
+                            technicians={technicianUsers}
+                            showTechnicianFilter={true}
+                        />
+
                         <TicketTable
-                            tickets={tickets}
+                            tickets={filteredTickets}
                             onOpenTicket={onOpenTicket}
                             showRequester={true}
                             showTechnician={true}
                         />
-
                     </section>
                 </>
             )}
@@ -171,7 +190,6 @@ function AdminDashboard({
             {adminView === 'USERS' && (
                 <>
                     <section className="stats-grid">
-
                         <div className="stat-card">
               <span>
                 Total Users
@@ -227,11 +245,9 @@ function AdminDashboard({
                                 Administrative accounts
                             </p>
                         </div>
-
                     </section>
 
                     <section className="tickets-section">
-
                         <div className="section-heading">
                             <div>
                                 <h2>
@@ -256,9 +272,7 @@ function AdminDashboard({
                             </div>
                         ) : (
                             <div className="ticket-table-wrapper">
-
                                 <table className="ticket-table">
-
                                     <thead>
                                     <tr>
                                         <th>ID</th>
@@ -269,10 +283,8 @@ function AdminDashboard({
                                     </thead>
 
                                     <tbody>
-
                                     {users.map((account) => (
                                         <tr key={account.id}>
-
                                             <td>
                                                 #{account.id}
                                             </td>
@@ -292,17 +304,12 @@ function AdminDashboard({
                             {account.role}
                           </span>
                                             </td>
-
                                         </tr>
                                     ))}
-
                                     </tbody>
-
                                 </table>
-
                             </div>
                         )}
-
                     </section>
                 </>
             )}

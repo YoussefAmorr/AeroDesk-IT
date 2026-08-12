@@ -1,19 +1,26 @@
 import TicketTable from '../components/TicketTable'
+import TicketFilters from '../components/TicketFilters'
 
 function TechnicianDashboard({
                                  user,
-                                 tickets,
                                  countByStatus,
                                  assignedToMeTickets,
                                  technicianView,
                                  setTechnicianView,
-                                 displayedTechnicianTickets,
+                                 filteredTickets,
                                  onOpenTicket,
+                                 searchTerm,
+                                 setSearchTerm,
+                                 statusFilter,
+                                 setStatusFilter,
+                                 priorityFilter,
+                                 setPriorityFilter,
+                                 categoryFilter,
+                                 setCategoryFilter,
                              }) {
     return (
         <>
             <div className="welcome-section">
-
                 <div>
                     <p className="eyebrow">
                         TECHNICIAN PORTAL
@@ -27,11 +34,9 @@ function TechnicianDashboard({
                         Review and manage IT support tickets across AeroDesk.
                     </p>
                 </div>
-
             </div>
 
             <section className="stats-grid">
-
                 <div className="stat-card">
                     <span>Open Tickets</span>
 
@@ -79,13 +84,10 @@ function TechnicianDashboard({
                         Your active workload
                     </p>
                 </div>
-
             </section>
 
             <section className="tickets-section">
-
                 <div className="section-heading technician-heading">
-
                     <div>
                         <h2>
                             Service Queue
@@ -97,7 +99,6 @@ function TechnicianDashboard({
                     </div>
 
                     <div className="queue-filters">
-
                         <button
                             type="button"
                             className={
@@ -125,18 +126,26 @@ function TechnicianDashboard({
                         >
                             Assigned to Me
                         </button>
-
                     </div>
-
                 </div>
 
+                <TicketFilters
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                    statusFilter={statusFilter}
+                    setStatusFilter={setStatusFilter}
+                    priorityFilter={priorityFilter}
+                    setPriorityFilter={setPriorityFilter}
+                    categoryFilter={categoryFilter}
+                    setCategoryFilter={setCategoryFilter}
+                />
+
                 <TicketTable
-                    tickets={displayedTechnicianTickets}
+                    tickets={filteredTickets}
                     onOpenTicket={onOpenTicket}
                     showRequester={true}
                     showTechnician={true}
                 />
-
             </section>
         </>
     )

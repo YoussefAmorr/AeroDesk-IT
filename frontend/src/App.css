@@ -1094,3 +1094,110 @@ select {
     width: 100%;
   }
 }
+
+/* Ticket Filters */
+
+.ticket-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+  padding: 18px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.filter-search,
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-search {
+  flex: 1;
+  min-width: 220px;
+}
+
+.filter-group {
+  min-width: 145px;
+}
+
+.filter-search label,
+.filter-group label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.filter-search input,
+.filter-group select {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 14px;
+  outline: none;
+  transition:
+          border-color 0.2s ease,
+          box-shadow 0.2s ease;
+}
+
+.filter-search input:focus,
+.filter-group select:focus {
+  border-color: #2563eb;
+  box-shadow:
+          0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.filter-search input::placeholder {
+  color: #94a3b8;
+}
+
+.filter-actions {
+  display: flex;
+  align-items: flex-end;
+}
+
+.clear-filter-button {
+  height: 42px;
+  padding: 0 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+          background 0.2s ease,
+          border-color 0.2s ease;
+}
+
+.clear-filter-button:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+@media (max-width: 768px) {
+  .ticket-filters {
+    align-items: stretch;
+  }
+
+  .filter-search,
+  .filter-group,
+  .filter-actions {
+    width: 100%;
+    min-width: 100%;
+  }
+
+  .clear-filter-button {
+    width: 100%;
+  }
+}
